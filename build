@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -eu
+pandoc --standalone -t slidy \
+        project-presentation.md  -o .build/presentation.html
