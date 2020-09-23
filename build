@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -eu
+mkdir -p .build/
 pandoc --standalone -t slidy \
         project-presentation.md  -o .build/presentation.html
