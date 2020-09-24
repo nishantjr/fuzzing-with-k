@@ -1,5 +1,5 @@
 ---
-title: Building language-agnostic semantics-aware Fuzzing tools
+title: Building language-agnostic semantics-aware test case generation
 author:
   - Nishant Rodrigues
   - Manasvi Saxena
@@ -71,6 +71,7 @@ Several languages are already defined:
 
 :::: {.column width=33%}
 Several tools can already be derived:
+
 
 * Parser
 * Interpreter
@@ -167,18 +168,17 @@ configuration <T color="yellow">
 Goals & Milestones
 ------------------
 
-#### Develop a fuzzer for K semantics
+#### Develop a test case generator for K semantics
 
 1. [Engineering] Grammar based generation
 2. [Engineering] Use coverage information for feedback
-3. [Research]    Use typing semantics (for typed languages) to synthesize
-                 input with interesting use of types
-4. [Research]    Combine symbolic execution with instrumentation to generate tests?
+3. [Research]    Can we generate instrumentation in a language agnostic fashion?
+3. [Research]    Can we use the typing semantics of language to generate more interesting tests?
+4. [Research]    Can we combine symbolic execution with instrumentation in interesting ways?
 
 Evaluation
 ----------
 
 1. Compare code coverage found using our tool with languages that already have fuzzers
 2. Try our fuzzer on a variety of languages: imperative, stack-based, functional
-
 
