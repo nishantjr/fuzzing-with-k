@@ -10,14 +10,23 @@ Building language-agnostic semantics-aware Fuzzing tools
 Motivation
 ----------
 
--   Traditionally, compilers, interpreters, fuzzers, static analyzers and
-    verification engines for programming languages are developed in isolation.
--   This creates a large duplication of work.
--   More niche languages may be left out with many of these tools never being
-    developed for them.
+- Broad classifications of *Fuzzing Techniques*:
+  * **Language Specific** - *Implicitly* leverage semantics to boost
+    performance at the expense of modularity. Example *JSFunFuzz* (JavaScript)
 
-There is an alternative: Semantics First!
------------------------------------------
+  * **Language Agnostic** - Offer modularity at the expense of performance.
+    Example *LangFuzz* (JavaScript, PHP)
+
+- Leads to *duplication of work*. Core idea constant across multiple
+  langauges.
+
+
+> - Develop a **Language Agnostic Tool** that *leverages semantics* to offer both **performance** and **modularity**
+  - Extend existing work on **Semantics First Approach**
+
+
+Semantics First Approach
+------------------------
 
 ::: columns
 
@@ -25,7 +34,8 @@ There is an alternative: Semantics First!
 
 1. Define a formal semantics for your language
 2. Derive each tool you care about from this semantics
-3. Profit.
+3. Profit. *Core* ideas instantiated with the semantics reduce duplication
+
 
 ::::
 
@@ -137,17 +147,17 @@ configuration <T color="yellow">
   rule false && _ => false
 
 // Block
-  rule {} => .   
-  rule {S} => S  
+  rule {} => .
+  rule {S} => S
 
 // Stmt
   rule <k> X = I:Int; => . ...</k>
        <state>... X |-> (_ => I) ...</state>
-  rule S1:Stmt S2:Stmt => S1 ~> S2  
+  rule S1:Stmt S2:Stmt => S1 ~> S2
   rule if (true)  S else _ => S
   rule if (false) _ else S => S
   rule while (B) S
-    => if (B) {S while (B) S} else {}  
+    => if (B) {S while (B) S} else {}
 
 // Pgm
   rule <k> int (X,Xs => Xs);_ </k> <state> Rho:Map (.Map => X|->0) </state>
@@ -159,14 +169,26 @@ configuration <T color="yellow">
 :::
 
 
-Proposal
---------
+Milestones
+----------
 
 Goals:
 
 1. [Engineering] Grammar based generation
 2. [Engineering] Use coverage information for feedback
-3. [Research]    K Definitions often have typing semantics, can we use those to generate well typed programs?
-4. [Research]    Can we combine symbolic execution with instrumentation to generate tests?
+3. [Research]    Use typing semantics (for typed languages) to synthesize
+                 input with interesting use of types
+4. [Research]    Combine symbolic execution with instrumentation to generate tests?
+
+
+
+Evaluation
+----------
+
+1. Start with a simple language with existing K semantics
+2. Currently considering EVM, JavaScript
+3. Evaluate against existing tools for language
+
+
 
 
