@@ -1,29 +1,34 @@
 ---
 title: Building language-agnostic semantics-aware Fuzzing tools
+author:
+  - Nishant Rodrigues
+  - Manasvi Saxena
 ---
-
-
-
-Building language-agnostic semantics-aware Fuzzing tools
-========================================================
 
 Motivation
 ----------
 
-- Broad classifications of *Fuzzing Techniques*:
-  * **Language Specific** - *Implicitly* leverage semantics to boost
-    performance at the expense of modularity. Example *JSFunFuzz* (JavaScript)
+:::columns
 
-  * **Language Agnostic** - Offer modularity at the expense of performance.
-    Example *LangFuzz* (JavaScript, PHP)
+::::column
+The Fuzzing tools we have seen so far, have either been:
 
-- Leads to *duplication of work*. Core idea constant across multiple
-  langauges.
+1.  Semantics-aware, language specific, but can find "deep" bugs
 
+    e.g. jsfunfuzz, KLEE, Korat
 
-> - Develop a **Language Agnostic Tool** that *leverages semantics* to offer both **performance** and **modularity**
-  - Extend existing work on **Semantics First Approach**
+2.  Language Agnostic, but semantics-unaware and can only find "shallow" bugs
 
+    e.g. AFL, LangFuzz
+::::
+
+::: {.column}
+-   Large duplication of effort
+-   New techniques need to be implemented and reimplemented for each language,
+    even though fuzzers for various languages are more similar than different.
+:::
+
+:::
 
 Semantics First Approach
 ------------------------
@@ -31,19 +36,15 @@ Semantics First Approach
 ::: columns
 
 :::: column
-
 1. Define a formal semantics for your language
-2. Derive each tool you care about from this semantics
-3. Profit. *Core* ideas instantiated with the semantics reduce duplication
-
-
+2. Derive each tool from these semantics
+3. ???
+3. Profit
 ::::
 
-:::: column
-
-DIAGRAM OF SEMANTICS FIRST
-
-::::
+::: column
+![](../k.png){width="100%"}
+:::
 
 :::
 
@@ -55,8 +56,7 @@ K is a framework for formally specifying languages using the semantics-first app
 
 ::: columns
 
-:::: column
-
+:::: {.column width=33%}
 Several languages are already defined:
 
 1.  C
@@ -67,11 +67,9 @@ Several languages are already defined:
 6.  EVM
 7.  Solidity
 8.  ...
-
 ::::
 
-:::: column
-
+:::: {.column width=33%}
 Several tools can already be derived:
 
 * Parser
@@ -80,10 +78,7 @@ Several tools can already be derived:
 * Deductive Verifier
 * Equivalence checker
 
-::::: incremental
-* <mark> Fuzzer? </mark>
-:::::
-
+>  * <mark> Fuzzer? </mark>
 ::::
 
 :::
@@ -169,10 +164,10 @@ configuration <T color="yellow">
 :::
 
 
-Milestones
-----------
+Goals & Milestones
+------------------
 
-Goals:
+#### Develop a fuzzer for K semantics
 
 1. [Engineering] Grammar based generation
 2. [Engineering] Use coverage information for feedback
@@ -180,15 +175,10 @@ Goals:
                  input with interesting use of types
 4. [Research]    Combine symbolic execution with instrumentation to generate tests?
 
-
-
 Evaluation
 ----------
 
-1. Start with a simple language with existing K semantics
-2. Currently considering EVM, JavaScript
-3. Evaluate against existing tools for language
-
-
+1. Compare code coverage found using our tool with languages that already have fuzzers
+2. Try our fuzzer on a variety of languages: imperative, stack-based, functional
 
 
