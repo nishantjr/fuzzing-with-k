@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -eu
 mkdir -p .build/
-pandoc --standalone -t slidy \
+pandoc --standalone -t slidy --css=../presentation.css \
         project-presentation.md  -o .build/presentation.html

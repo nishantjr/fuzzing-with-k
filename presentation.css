@@ -1,0 +1,8 @@
+div.slide { margin: 5em }
+h1 { font-family: serif }
+body { font-size: 24pt !important;}
+pre.k {
+    border-color: default;
+    background-color: white;
+    border-left-width: thin;
+}
