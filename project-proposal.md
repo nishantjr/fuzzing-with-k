@@ -1,32 +1,39 @@
 ---
-title: Building language-agnostic semantics-aware test case generation
+title: Building a language-agnostic semantics-aware test case generator
 author:
-  - Nishant Rodrigues
-  - Manasvi Saxena
+  - Nishant Rodrigues (nishant2@illinois.edu)
+  - Manasvi Saxena (msaxena2@illinois.edu)
 ---
+
+\newcommand {\K} {$\mathbb{K}$}
 
 Abstract
 --------
 
 Test case generation tools need to be aware of the semantics of the tools they
 are targeting in order to generate programs the exercise "deep" paths. However,
-their development is expensive. Thus, most test case generation tools are either
-language-agnostic or semantics-aware but not both. We intend to use a
-semantics-first approach to tackle the problem. The approach makes test case
-generation parametric over the formal semantics of the language.
+their development is expensive and are only available for a few languages in
+widespread usage. Language agnostic fuzzers alllowing testing many more
+languages in the same tool reducing devlopment costs. Thus, most test case
+generation tools are either language-agnostic or semantics-aware, but not both.
 
-We intend to use the K Framework as the basis of our work. K provides an
-environment for defining programming languages semantics and deriving tools from
-them. Currently, K does not support test case generation. Our work will focus on
-adding a test case generator to K and evaluating it with existing K definitions
-of languages like the EVM and JavaScript.
+The semantics-first approach to language development gives us insight into how
+this problem can be solved. As prescribed by this approach, we will build a test
+case generator that is parametric over the formal semantics of the language. We
+intend to use the \K{} Framework as the basis of our work. This
+framework allows defining programming languages semantics and deriving various
+language tools (e.g. parsers, interpreters, deductive verifiers, symbolic
+execution engines...) from them. Currently, \K{} does not support test
+case generation. Our work will focus on adding a test case generator to
+\K{} and evaluating it with existing \K{} definitions of
+languages like the EVM and JavaScript.
 
 Motivation
 ----------
 
 Test case generation tools we have seen so far, have either been: semantics-aware,
 language specific, but can find "deep" bugs (e.g. jsfunfuzz, KLEE, Korat) or,
-language agnostic, but semantics-unaware and only able to find"shallow" bugs
+language agnostic, but semantics-unaware and only able to find "shallow" bugs
 (e.g. AFL, LangFuzz).
 
 This is because of the way programming languages are traditionally developed --
@@ -43,17 +50,19 @@ formal semantics for your language. Then, from that formal semantics, we derive
 the various tool we need, such as parsers, compilers, interpreters, deduction
 engines and test case generators.
 
-![](../k.png){width="100%"}
+![](k.png){width="100%"}
 
-The K Framework is a language framework that takes such an approach. Several
-large, real-world languages are already have semantics defined in K, such as C,
-Python, LLVM, Java, JavaScript, EVM and Solidity. The K Framework is also
+The \K{} Framework is a language framework that takes such an approach. Several
+large, real-world languages are already have semantics defined in \K{}, such as C,
+Python, LLVM, Java, JavaScript, EVM and Solidity. The \K{} Framework is also
 already able to derive a parser, interpreter, symbolic execution engine, model
 checker and a deductive verifier from these semantics.
 
-The K Framework, however, does not yet derive a test case generator. This
+The \K{} Framework, however, does not yet derive a test case generator. This
 project aims to remedy that situation by developing a test case generator parametric over the
 input language that is both language-agnostic, and semantics-aware.
+
+\pagebreak
 
 Proposal & Milestones
 ---------------------
@@ -72,11 +81,11 @@ to generate more semantically interesting tests.
   --- ------------- -------------------------------------------------------------------------------------
 
 1.  In our initial goal is to generate programs that are only syntactically
-    correct using the program grammar that is part of a K semantics. We will do
-    this by extending K's haskell backend and using the Hedgehog haskell
+    correct using the program grammar that is part of a \K{} semantics. We will do
+    this by extending \K{}'s haskell backend and using the Hedgehog haskell
     library.
 
-2.  Our next goal is to leverage K's coverage information as a guide to which
+2.  Our next goal is to leverage \K{}'s coverage information as a guide to which
     programs are most interesting to mutate.
 
 
@@ -89,7 +98,7 @@ From there, we move on to more research questions.
     the programs semantics, e.g. by only using variables that have already been
     declared.
 
-4.  The typing semantics for languages may also defined in K. This may allow us
+4.  The typing semantics for languages may also defined in \K{}. This may allow us
     to define a type-based generator as an improvement over grammar based ones.
 
 
