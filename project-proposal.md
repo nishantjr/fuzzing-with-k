@@ -11,8 +11,15 @@ Abstract
 Test case generation tools need to be aware of the semantics of the tools they
 are targeting in order to generate programs the exercise "deep" paths. However,
 their development is expensive. Thus, most test case generation tools are either
-language-agnostic or semantics-aware but not both. The semantics-first approach
-to language development gives us hope for solving this problem.
+language-agnostic or semantics-aware but not both. We intend to use
+a semantics-first approach to tackle the problem. The approach makes
+test case generation parametric over the formal semantics of the language.
+We intend to use the K Framework as the basis of our work. K provides
+an environment for defining programming languages semantics and deriving
+tools from them. Currently, K does not support test case generation. Our
+work will focus on adding a test case generator to K and evaluating it
+with existing K definitions of languages like the EVM and JavaScript.
+
 
 Motivation
 ----------
@@ -73,7 +80,7 @@ to generate more semantically intersting tests.
     programs are most interesting to mutate.
 
 
-From there, we move on to more research questions. 
+From there, we move on to more research questions.
 
 3.  Research Question: Can we combine symbolic execution with instrumentation in
     interesting ways?
