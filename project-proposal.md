@@ -11,15 +11,15 @@ Abstract
 Test case generation tools need to be aware of the semantics of the tools they
 are targeting in order to generate programs the exercise "deep" paths. However,
 their development is expensive. Thus, most test case generation tools are either
-language-agnostic or semantics-aware but not both. We intend to use
-a semantics-first approach to tackle the problem. The approach makes
-test case generation parametric over the formal semantics of the language.
-We intend to use the K Framework as the basis of our work. K provides
-an environment for defining programming languages semantics and deriving
-tools from them. Currently, K does not support test case generation. Our
-work will focus on adding a test case generator to K and evaluating it
-with existing K definitions of languages like the EVM and JavaScript.
+language-agnostic or semantics-aware but not both. We intend to use a
+semantics-first approach to tackle the problem. The approach makes test case
+generation parametric over the formal semantics of the language.
 
+We intend to use the K Framework as the basis of our work. K provides an
+environment for defining programming languages semantics and deriving tools from
+them. Currently, K does not support test case generation. Our work will focus on
+adding a test case generator to K and evaluating it with existing K definitions
+of languages like the EVM and JavaScript.
 
 Motivation
 ----------
@@ -64,12 +64,12 @@ will bring to the level of current language-agnostic frameworks. In the second,
 a higher-risk research effort, we will attempt to leverage the language semantics
 to generate more semantically interesting tests.
 
-  --- ------------- ---------------------------------------------------------------------------------
+  --- ------------- -------------------------------------------------------------------------------------
    1  Engineering   Grammar based generation
    2  Engineering   Use coverage information for feedback for mutation
    3  Research      Can we combine symbolic execution with instrumentation in interesting ways?
    4  Research      Can we use the typing semantics of the language to generate more interesting tests?
-  --- ------------- ---------------------------------------------------------------------------------
+  --- ------------- -------------------------------------------------------------------------------------
 
 1.  In our initial goal is to generate programs that are only syntactically
     correct using the program grammar that is part of a K semantics. We will do
