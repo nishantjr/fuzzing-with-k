@@ -86,9 +86,17 @@ which is labeled `T`.
 
 ```k
   configuration <T color="yellow">
-                  <k color="green"> $PGM:Pgm </k>
+                  <k color="green"> #init </k>
                   <state color="red"> .Map </state>
                 </T>
+                <pgm> .K </pgm>
+```
+
+```k
+  syntax KItem ::= "#init"
+  syntax Id ::= "x" [token]
+  rule <k> #init => int x:Id, .Ids; ?V = ?I:Int; if (?_ <= 3) ?T else ?F </k>
+       <pgm> _ =>   int x:Id, .Ids; ?V = ?I:Int; if (?_ <= 3) ?T else ?F </pgm>
 ```
 
 The configuration variable *PGM* tells the **K** tool where to
