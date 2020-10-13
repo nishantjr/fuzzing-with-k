@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import sys
+
+# Bootstrapping
+# =============
+
+# Make sure the KNinja repo is available.
+#
+subprocess.check_call(['git', 'submodule', 'update', '--init', '--recursive'])
+extdir = 'ext'
+sys.path.append(os.path.join(os.path.dirname(__file__), extdir))
+
+from kninja import *
+
+# Build
+# =====
+
+proj = KProject(extdir = extdir)
+
+imp =  proj.definition( alias         = 'imp-haskell'
+                      , main          = 'imp.md'
+                      , backend       = 'haskell'
+                      )
+
+proj.main()
