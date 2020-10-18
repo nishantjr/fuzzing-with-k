@@ -87,15 +87,16 @@ module FUZZER
     syntax KResult ::= String
 
     syntax KItem ::= fuzz(Int, PrePattern) [seqstrict(2)]
-    rule <k> fuzz(N, P) => fuzz(N -Int 1, exec(P))  ... </k> requires N >Int 0
+    rule <k> fuzz(N, \or{S}(P, Ps)) => fuzz(N, P) ~> fuzz(N, Ps) ... </k>
+    rule <k> fuzz(N, P) => fuzz(N -Int 1, exec(P))           ... </k> requires N >Int 0 andBool \or{_}(_, _) :/=K P
     rule <k> fuzz(0, P) => print(pretty(P))         ... </k>
 
     syntax PrePattern ::= exec(Pattern)
     rule <k> exec(Pattern)
-          => write("tmp-step.kore", unparsePattern(Pattern)) ~> kore-exec("tmp-step.kore")
+          => write("tmp/step.kore", unparsePattern(Pattern)) ~> kore-exec("tmp/step.kore")
              ...
          </k>
-         
+
     syntax KItem ::= write(filename: String, content: String)
                    | write(fd: IOInt, content: String)
                    | close(Int)
@@ -105,7 +106,7 @@ module FUZZER
 
     syntax KItem ::= "kore-exec" "(" path: String ")"
     rule <k> kore-exec(Path)
-          => unparse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --depth 1 --module IMP --pattern " +String Path))
+          => unparse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --search search-pattern.kore --searchType FINAL --depth 1 --module IMP --pattern " +String Path))
              ...
          </k>
 
@@ -118,14 +119,26 @@ module FUZZER
 
     syntax PreString ::= pretty(Pattern)
     rule <k> pretty(Pattern)
-          => write("tmp-pretty", unparsePattern(Pattern))
-          ~> system("kprint .build/defn/imp-haskell/imp-kompiled/ tmp-pretty true true")
+          => write("tmp/pretty", unparsePattern(Pattern))
+          ~> system("kprint .build/defn/imp-haskell/imp-kompiled/ tmp/pretty true true")
              ...
          </k>
 
     syntax KItem ::= print(PreString) [seqstrict]
-    rule <k> print(S:String) => .K </k>
+    rule <k> print(S:String) => .K ... </k>
          <out> ... .List => ListItem(S) </out>
+```
 
+TODO: remove once `--strategy all` is available
+
+```k
+    syntax KVar ::= "VarResult" [token]
+                  | "SortGeneratedTopCell" [token]
+                  | "dotk" [token]
+                  | "kseq" [token]
+    rule \equals { _, _ } ( VarResult : SortGeneratedTopCell {} , Result ) => Result [anywhere]
+```
+
+```k
 endmodule
 ```
