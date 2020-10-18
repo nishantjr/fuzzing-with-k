@@ -94,9 +94,9 @@ which is labeled `T`.
 
 ```k
   syntax KItem ::= "#init"
-  syntax Id ::= "x" [token]
-  rule <k> #init => int x:Id, .Ids; ?V = ?I:Int; if (?_ <= 3) ?T else ?F </k>
-       <pgm> _ =>   int x:Id, .Ids; ?V = ?I:Int; if (?_ <= 3) ?T else ?F </pgm>
+  syntax Id ::= "x" [token] | "y" [token]
+  rule <k> #init => int x, y, .Ids; ?V = ?I:Int; ?T1 ?T2:Stmt </k>
+       <pgm> _   => int x, y, .Ids; ?V = ?I:Int; ?T1 ?T2:Stmt </pgm>
 ```
 
 The configuration variable *PGM* tells the **K** tool where to

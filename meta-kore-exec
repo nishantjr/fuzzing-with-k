@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Run kore-exec and parse output to meta K
+set -e
+PATH=$(pwd)/ext/k/k-distribution/target/release/k/bin/:$PATH
+
+temp_file=/tmp/meta-kore-exec.tmp
+
+kore-exec "$@" > $temp_file 
+./.build/defn/fuzzer/fuzzer-kompiled/parser_PGM "$temp_file"

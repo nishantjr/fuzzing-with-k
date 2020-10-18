@@ -1,0 +1,96 @@
+/* Fl Fn D Sfc */
+Lbl'-LT-'generatedTop'-GT-'{}(
+    /* Fl Fn D Sfc */
+    Lbl'-LT-'T'-GT-'{}(
+        /* Fl Fn D Sfc */
+        Lbl'-LT-'k'-GT-'{}(
+            /* Fl Fn D Sfc */
+            kseq{}(
+                /* Fl Fn D Sfc */
+                /* Inj: */ inj{SortPgm{}, SortKItem{}}(
+                    /* Fl Fn D Sfc */
+                    Lblint'UndsSClnUndsUnds'IMP-SYNTAX'Unds'Pgm'Unds'Ids'Unds'Stmt{}(
+                        /* Fl Fn D Sfa Cl */
+                        Lbl'UndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids{}(
+                            /* Fl Fn D Sfa Cl */
+                            \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "x"),
+                            /* Fl Fn D Sfa Cl */
+                            Lbl'UndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids{}(
+                                /* Fl Fn D Sfa Cl */
+                                \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "y"),
+                                /* Fl Fn D Sfa Cl */
+                                Lbl'Stop'List'LBraQuotUndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids'QuotRBraUnds'Ids{}()
+                            )
+                        ),
+                        /* Fl Fn D Sfc */
+                        Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(
+                            /* Fl Fn D Sfc */
+                            Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(
+                                /* Fl Fn D Sfc */
+                                Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
+                                    /* Fl Fn D Sfa */ Var'Ques'V:SortId{},
+                                    /* Fl Fn D Sfc */
+                                    /* Inj: */ inj{SortInt{}, SortAExp{}}(
+                                        /* Fl Fn D Sfa */ Var'Ques'I:SortInt{}
+                                    )
+                                ),
+                                /* Fl Fn D Sfa */ Var'Ques'T1:SortStmt{}
+                            ),
+                            /* Fl Fn D Sfa */ Var'Ques'T2:SortStmt{}
+                        )
+                    )
+                ),
+                /* Fl Fn D Sfa Cl */ dotk{}()
+            )
+        ),
+        /* Fl Fn D Sfa Cl */
+        Lbl'-LT-'state'-GT-'{}(
+            /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
+        )
+    ),
+    /* Fl Fn D Sfa Cl */
+    Lbl'-LT-'generatedCounter'-GT-'{}(
+        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+    ),
+    /* Fl Fn D Sfc */
+    Lbl'-LT-'pgm'-GT-'{}(
+        /* Fl Fn D Sfc */
+        kseq{}(
+            /* Fl Fn D Sfc */
+            /* Inj: */ inj{SortPgm{}, SortKItem{}}(
+                /* Fl Fn D Sfc */
+                Lblint'UndsSClnUndsUnds'IMP-SYNTAX'Unds'Pgm'Unds'Ids'Unds'Stmt{}(
+                    /* Fl Fn D Sfa Cl */
+                    Lbl'UndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids{}(
+                        /* Fl Fn D Sfa Cl */
+                        \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "x"),
+                        /* Fl Fn D Sfa Cl */
+                        Lbl'UndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids{}(
+                            /* Fl Fn D Sfa Cl */
+                            \dv{SortId{}}(/* Fl Fn D Sfa Cl */ "y"),
+                            /* Fl Fn D Sfa Cl */
+                            Lbl'Stop'List'LBraQuotUndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids'QuotRBraUnds'Ids{}()
+                        )
+                    ),
+                    /* Fl Fn D Sfc */
+                    Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(
+                        /* Fl Fn D Sfc */
+                        Lbl'UndsUndsUnds'IMP-SYNTAX'Unds'Stmt'Unds'Stmt'Unds'Stmt{}(
+                            /* Fl Fn D Sfc */
+                            Lbl'UndsEqlsUndsSClnUnds'IMP-SYNTAX'Unds'Stmt'Unds'Id'Unds'AExp{}(
+                                /* Fl Fn D Sfa */ Var'Ques'V:SortId{},
+                                /* Fl Fn D Sfc */
+                                /* Inj: */ inj{SortInt{}, SortAExp{}}(
+                                    /* Fl Fn D Sfa */ Var'Ques'I:SortInt{}
+                                )
+                            ),
+                            /* Fl Fn D Sfa */ Var'Ques'T1:SortStmt{}
+                        ),
+                        /* Fl Fn D Sfa */ Var'Ques'T2:SortStmt{}
+                    )
+                )
+            ),
+            /* Fl Fn D Sfa Cl */ dotk{}()
+        )
+    )
+)

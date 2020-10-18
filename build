@@ -25,4 +25,11 @@ imp =  proj.definition( alias         = 'imp-haskell'
                       , backend       = 'haskell'
                       )
 
+fuzzer = proj.definition( alias       = 'fuzzer'
+                      , main          = 'fuzzer.md'
+                      , backend       = 'llvm'
+                      , flags         = '--gen-bison-parser --syntax-module KORE'
+                      )
+
+
 proj.main()
