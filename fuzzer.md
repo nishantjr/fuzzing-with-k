@@ -80,7 +80,7 @@ module FUZZER
     configuration <k> fuzz(10, $PGM:Pattern) </k>
                   <rand> String2Base("0113377ff", 16) </rand> // Gradually reducing frequency of set bits
                   <out stream="stdout"> .List </out>
-    
+
     syntax PrePattern ::= Pattern
     syntax KResult ::= Pattern 
     
@@ -106,7 +106,7 @@ module FUZZER
 
     syntax KItem ::= "kore-exec" "(" path: String ")"
     rule <k> kore-exec(Path)
-          => unparse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --search search-pattern.kore --searchType FINAL --depth 1 --module IMP --pattern " +String Path))
+          => unparse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --search search-pattern.kore --searchType FINAL --depth 6 --module IMP --pattern " +String Path))
              ...
          </k>
 
