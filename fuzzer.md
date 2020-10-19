@@ -76,14 +76,15 @@ module FUZZER
     imports KORE-UNPARSE
     imports K-IO
     imports K-REFLECTION
+    imports MAP
 
-    configuration <k> fuzz(10, $PGM:Pattern) </k>
-                  <rand> String2Base("0113377ff", 16) </rand> // Gradually reducing frequency of set bits
+    configuration <k> fuzz(20, $PGM:Pattern) </k>
+                  <rand> String2Base("fffffffffffffffffffffffffffffffffffff", 16) </rand> // Gradually reducing frequency of set bits
                   <out stream="stdout"> .List </out>
     
     syntax PrePattern ::= Pattern
-    syntax KResult ::= Pattern 
-    
+    syntax KResult ::= Pattern
+
     syntax PreString ::= String
     syntax KResult ::= String
 
@@ -111,9 +112,14 @@ module FUZZER
          </k>
 
     syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
-    rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k> <rand> Rand => Rand /Int 2 </rand> requires Rand %Int 2 ==Int 1
-    rule <k> choose(N, \or{_}(P1, P2)) => print(pretty(P1)) ~> choose(N, P2) ... </k> <rand> Rand => Rand /Int 2 </rand> requires Rand %Int 2 ==Int 0
-    rule <k> choose(N, P) => fuzz(N, P)  ... </k> requires \or{_}(_, _) :/=K P
+    rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k>
+         <rand> Rand => Rand /Int 2 </rand>
+      requires Rand %Int 2 ==Int 1
+    rule <k> choose(N, \or{_}(P1, P2)) => print(pretty(P1)) ~> choose(N, P2) ... </k>
+         <rand> Rand => Rand /Int 2 </rand>
+      requires Rand %Int 2 ==Int 0
+    rule <k> choose(N, P) => fuzz(N, P)       ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
+    rule <k> choose(N, P) => print(pretty(P)) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
 
     syntax PrePattern ::= unparse(PreString) [seqstrict]
     rule <k> unparse(MetaKore) => #parseKORE(MetaKore):Pattern ... </k>
@@ -125,13 +131,46 @@ module FUZZER
     syntax PreString ::= pretty(Pattern)
     rule <k> pretty(Pattern)
           => write("tmp/pretty", unparsePattern(Pattern))
-          ~> system("kprint .build/defn/imp-haskell/imp-kompiled/ tmp/pretty true true")
+          ~> system("kprint .build/defn/imp-haskell/imp-kompiled/ tmp/pretty false true")
              ...
          </k>
 
     syntax KItem ::= print(PreString) [seqstrict]
     rule <k> print(S:String) => .K ... </k>
          <out> ... .List => ListItem(S) </out>
+```
+
+Checks if a rule has been exercised more than 3 times.
+
+```k
+    syntax Bool ::= withinRuleLimits(Pattern) [function]
+    rule withinRuleLimits(P) => withinRuleLimits(getRuleInstrumentation(P), .Map)
+
+    syntax Bool ::= withinRuleLimits(Patterns, Map) [function]
+    rule withinRuleLimits((R, Rs),                  M)
+      => withinRuleLimits((R, Rs), (R |-> 0)        M) requires notBool R in_keys(M)
+    rule withinRuleLimits((R, Rs), (R |-> N)        M)
+      => withinRuleLimits(    Rs , (R |-> N +Int 1) M) requires N <Int 3
+    rule withinRuleLimits((R,_Rs), (R |-> 3)       _M)
+      => false
+    rule withinRuleLimits(.Patterns, _) => true
+
+    syntax KVar ::= "Lbl'-LT-'generatedTop'-GT-'" [token] 
+    syntax KVar ::= "Lbl'-LT-'ruleInstrumentation'-GT-'" [token] 
+    syntax Patterns ::= getRuleInstrumentation(Pattern) [function]
+    rule getRuleInstrumentation(\and{_}(P1, P2)) => getRuleInstrumentation(P1) +Patterns getRuleInstrumentation(P2)
+    rule getRuleInstrumentation(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_, _, _, Lbl'-LT-'ruleInstrumentation'-GT-'{.Sorts}(KSeq)))
+      => kseqToPatterns(KSeq)
+    rule getRuleInstrumentation(\equals{_, _}(_, _)) => .Patterns
+    rule getRuleInstrumentation(\not{_}(_))          => .Patterns
+    
+    syntax Patterns ::= kseqToPatterns(Pattern) [function]
+    rule kseqToPatterns(dotk{.Sorts}(.Patterns)) => .Patterns
+    rule kseqToPatterns(kseq{.Sorts}(P, Ps)) => P, kseqToPatterns(Ps)
+    
+    syntax Patterns ::= Patterns "+Patterns" Patterns [function]
+    rule (P1, P1s) +Patterns P2s => P1, (P1s +Patterns P2s)
+    rule .Patterns +Patterns P2s => P2s
 ```
 
 TODO: remove once `--strategy all` is available

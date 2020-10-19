@@ -38,9 +38,9 @@ argument, because we want to give it a short-circuit semantics.
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"               [format(%1%i%n%2%d%n%3)]
   syntax Stmt  ::= Block
-                 | Id "=" AExp ";"            [color(pink), format(%1 %2 %3%4)]
+                 | Id "=" AExp ";"            [strict(2), color(pink), format(%1 %2 %3%4)]
                  | "if" "(" BExp ")"
-                   Block "else" Block         [colors(yellow, white, white, yellow), format(%1 %2%3%4 %5 %6 %7)]
+                   Block "else" Block         [strict(1), colors(yellow, white, white, yellow), format(%1 %2%3%4 %5 %6 %7)]
                  | "while" "(" BExp ")" Block [colors(yellow,white,white), format(%1 %2%3%4 %5)]
                  > Stmt Stmt                  [left, format(%1%n%2)]
 ```
@@ -160,8 +160,8 @@ systems.  You can make these rules computational (dropping the attribute
 `structural`) if you do want these to count as computational steps.
 
 ```k
-  rule {} => .   [structural]
-  rule {S} => S  [structural]
+  rule <k> { } => . ... </k> <ruleInstrumentation> .K => 31 ... </ruleInstrumentation>
+  rule <k> {S} => S ... </k> <ruleInstrumentation> .K => 31 ... </ruleInstrumentation>
 ```
 
 ### Assignment
@@ -191,21 +191,27 @@ internal steps).
   syntax BExp ::= "#hole"
 
   rule <k> A1 / A2  => A1 ~> #hole  / A2 ... </k> <ruleInstrumentation> .K => 2 ... </ruleInstrumentation> requires notBool isKResult(A1)
+
   rule <k> A1 + A2  => A1 ~> #hole  + A2 ... </k> <ruleInstrumentation> .K => 3 ... </ruleInstrumentation> requires notBool isKResult(A1)
   rule <k> A1 <= A2 => A1 ~> #hole <= A2 ... </k> <ruleInstrumentation> .K => 4 ... </ruleInstrumentation> requires notBool isKResult(A1)
   rule <k> B1 && B2 => B1 ~> #hole && B2 ... </k> <ruleInstrumentation> .K => 5 ... </ruleInstrumentation> requires notBool isKResult(B1)
   rule <k> ! B1     => B1 ~> ! #hole     ... </k> <ruleInstrumentation> .K => 6 ... </ruleInstrumentation> requires notBool isKResult(B1)
 
-  rule <k> A1:Int  / A2  => A2 ~> A2  / #hole ... </k> <ruleInstrumentation> .K => 12 ... </ruleInstrumentation> requires isKResult(A1)
-  rule <k> A1:Int  + A2  => A2 ~> A2  + #hole ... </k> <ruleInstrumentation> .K => 13 ... </ruleInstrumentation> requires isKResult(A1)
-  rule <k> A1:Int  <= A2 => A2 ~> A2 <= #hole ... </k> <ruleInstrumentation> .K => 14 ... </ruleInstrumentation> requires isKResult(A1)
-  rule <k> B1:Bool && B2 => B2 ~> B2 && #hole ... </k> <ruleInstrumentation> .K => 15 ... </ruleInstrumentation> requires isKResult(B1)
+  rule <k> A1:Int  / A2  => A2 ~> A1  / #hole ... </k> <ruleInstrumentation> .K => 12 ... </ruleInstrumentation> requires notBool isKResult(A2)
+  rule <k> A1:Int  + A2  => A2 ~> A1  + #hole ... </k> <ruleInstrumentation> .K => 13 ... </ruleInstrumentation> requires notBool isKResult(A2)
+  rule <k> A1:Int  <= A2 => A2 ~> A1 <= #hole ... </k> <ruleInstrumentation> .K => 14 ... </ruleInstrumentation> requires notBool isKResult(A2)
+  rule <k> B1:Bool && B2 => B2 ~> B1 && #hole ... </k> <ruleInstrumentation> .K => 15 ... </ruleInstrumentation> requires notBool isKResult(B2)
 
   rule <k> A1:Int ~> #hole  / A2 => A1 / A2  ... </k>
   rule <k> A1:Int ~> #hole  + A2 => A1 + A2  ... </k>
   rule <k> A1:Int ~> #hole <= A2 => A1 <= A2 ... </k>
   rule <k> B1:Bool ~> #hole && B2 => B1 && B2 ... </k>
   rule <k> B1:Bool ~> ! #hole => ! B1 ... </k>
+
+  rule <k> A2:Int  ~> A1  / #hole => A1 / A2  ... </k>
+  rule <k> A2:Int  ~> A1  + #hole => A1 + A2  ... </k>
+  rule <k> A2:Int  ~> A1 <= #hole => A1 <= A2 ... </k>
+  rule <k> B2:Bool ~> B1 && #hole => B1 && B2 ... </k>
 ```
 
 ### Conditional
@@ -216,8 +222,8 @@ Recall that the conditional was annotated with the attribute
 argument is allowed to be evaluated.
 
 ```k
-  rule if (true)  S else _ => S
-  rule if (false) _ else S => S
+  rule <k> if (true)  S else _ => S ... </k> <ruleInstrumentation> .K => 32 ... </ruleInstrumentation>
+  rule <k> if (false) _ else S => S ... </k> <ruleInstrumentation> .K => 32 ... </ruleInstrumentation>
 ```
 
 ### While loop
@@ -225,7 +231,8 @@ We give the semantics of the `while` loop by unrolling.
 Note that we preferred to make the rule below structural.
 
 ```k
-  rule while (B) S => if (B) {S while (B) S} else {}  [structural]
+  rule <k> while (B) S => if (B) {S while (B) S} else {} ... </k>
+       <ruleInstrumentation> .K => 20 ... </ruleInstrumentation>
 ```
 
 ### Programs
