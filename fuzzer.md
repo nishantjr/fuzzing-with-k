@@ -77,7 +77,8 @@ module FUZZER
     imports K-IO
     imports K-REFLECTION
 
-    configuration <k> fuzz(8, $PGM:Pattern) </k>
+    configuration <k> fuzz(10, $PGM:Pattern) </k>
+                  <rand> String2Base("0113377ff", 16) </rand> // Gradually reducing frequency of set bits
                   <out stream="stdout"> .List </out>
     
     syntax PrePattern ::= Pattern
@@ -87,9 +88,8 @@ module FUZZER
     syntax KResult ::= String
 
     syntax KItem ::= fuzz(Int, PrePattern) [seqstrict(2)]
-    rule <k> fuzz(N, \or{S}(P, Ps)) => fuzz(N, P) ~> fuzz(N, Ps) ... </k>
-    rule <k> fuzz(N, P) => fuzz(N -Int 1, exec(P))           ... </k> requires N >Int 0 andBool \or{_}(_, _) :/=K P
-    rule <k> fuzz(0, P) => print(pretty(P))         ... </k>
+    rule <k> fuzz(N, P) => choose(N -Int 1, exec(P)) ... </k> requires N >Int 0 andBool \or{_}(_, _) :/=K P
+    rule <k> fuzz(0, P) => print(pretty(P))          ... </k>
 
     syntax PrePattern ::= exec(Pattern)
     rule <k> exec(Pattern)
@@ -109,6 +109,11 @@ module FUZZER
           => unparse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --search search-pattern.kore --searchType FINAL --depth 1 --module IMP --pattern " +String Path))
              ...
          </k>
+
+    syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
+    rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k> <rand> Rand => Rand /Int 2 </rand> requires Rand %Int 2 ==Int 1
+    rule <k> choose(N, \or{_}(P1, P2)) => print(pretty(P1)) ~> choose(N, P2) ... </k> <rand> Rand => Rand /Int 2 </rand> requires Rand %Int 2 ==Int 0
+    rule <k> choose(N, P) => fuzz(N, P)  ... </k> requires \or{_}(_, _) :/=K P
 
     syntax PrePattern ::= unparse(PreString) [seqstrict]
     rule <k> unparse(MetaKore) => #parseKORE(MetaKore):Pattern ... </k>
