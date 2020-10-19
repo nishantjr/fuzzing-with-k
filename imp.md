@@ -27,20 +27,20 @@ argument, because we want to give it a short-circuit semantics.
 ```k
   syntax AExp  ::= Int | Id
                  | "-" Int                    [format(%1%2)]
-                 | AExp "/" AExp              [left, strict, color(pink)]
-                 > AExp "+" AExp              [left, strict, color(pink)]
+                 | AExp "/" AExp              [left, color(pink)]
+                 > AExp "+" AExp              [left, color(pink)]
                  | "(" AExp ")"               [bracket]
   syntax BExp  ::= Bool
-                 | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2}), color(pink)]
-                 | "!" BExp                   [strict, color(pink)]
-                 > BExp "&&" BExp             [left, strict(1), color(pink)]
+                 | AExp "<=" AExp             [latex({#1}\leq{#2}), color(pink)]
+                 | "!" BExp                   [color(pink)]
+                 > BExp "&&" BExp             [left, color(pink)]
                  | "(" BExp ")"               [bracket]
   syntax Block ::= "{" "}"
                  | "{" Stmt "}"               [format(%1%i%n%2%d%n%3)]
   syntax Stmt  ::= Block
-                 | Id "=" AExp ";"            [strict(2), color(pink), format(%1 %2 %3%4)]
+                 | Id "=" AExp ";"            [color(pink), format(%1 %2 %3%4)]
                  | "if" "(" BExp ")"
-                   Block "else" Block         [strict(1), colors(yellow, white, white, yellow), format(%1 %2%3%4 %5 %6 %7)]
+                   Block "else" Block         [colors(yellow, white, white, yellow), format(%1 %2%3%4 %5 %6 %7)]
                  | "while" "(" BExp ")" Block [colors(yellow,white,white), format(%1 %2%3%4 %5)]
                  > Stmt Stmt                  [left, format(%1%n%2)]
 ```
@@ -90,6 +90,7 @@ which is labeled `T`.
                   <state color="red"> .Map </state>
                 </T>
                 <pgm> $PGM:Pgm ~> .K </pgm>
+                <ruleInstrumentation> .K </ruleInstrumentation>
 ```
 
 The configuration variable *PGM* tells the **K** tool where to
@@ -184,7 +185,27 @@ transitions (i.e., hiding the structural rules as unobservable, or
 internal steps).
 
 ```k
-  rule S1:Stmt S2:Stmt => S1 ~> S2  [structural]
+  rule <k> S1:Stmt S2:Stmt => S1 ~> S2 ... </k> <ruleInstrumentation> .K => 1 ... </ruleInstrumentation>
+
+  syntax AExp ::= "#hole"
+  syntax BExp ::= "#hole"
+
+  rule <k> A1 / A2  => A1 ~> #hole  / A2 ... </k> <ruleInstrumentation> .K => 2 ... </ruleInstrumentation> requires notBool isKResult(A1)
+  rule <k> A1 + A2  => A1 ~> #hole  + A2 ... </k> <ruleInstrumentation> .K => 3 ... </ruleInstrumentation> requires notBool isKResult(A1)
+  rule <k> A1 <= A2 => A1 ~> #hole <= A2 ... </k> <ruleInstrumentation> .K => 4 ... </ruleInstrumentation> requires notBool isKResult(A1)
+  rule <k> B1 && B2 => B1 ~> #hole && B2 ... </k> <ruleInstrumentation> .K => 5 ... </ruleInstrumentation> requires notBool isKResult(B1)
+  rule <k> ! B1     => B1 ~> ! #hole     ... </k> <ruleInstrumentation> .K => 6 ... </ruleInstrumentation> requires notBool isKResult(B1)
+
+  rule <k> A1:Int  / A2  => A2 ~> A2  / #hole ... </k> <ruleInstrumentation> .K => 12 ... </ruleInstrumentation> requires isKResult(A1)
+  rule <k> A1:Int  + A2  => A2 ~> A2  + #hole ... </k> <ruleInstrumentation> .K => 13 ... </ruleInstrumentation> requires isKResult(A1)
+  rule <k> A1:Int  <= A2 => A2 ~> A2 <= #hole ... </k> <ruleInstrumentation> .K => 14 ... </ruleInstrumentation> requires isKResult(A1)
+  rule <k> B1:Bool && B2 => B2 ~> B2 && #hole ... </k> <ruleInstrumentation> .K => 15 ... </ruleInstrumentation> requires isKResult(B1)
+
+  rule <k> A1:Int ~> #hole  / A2 => A1 / A2  ... </k>
+  rule <k> A1:Int ~> #hole  + A2 => A1 + A2  ... </k>
+  rule <k> A1:Int ~> #hole <= A2 => A1 <= A2 ... </k>
+  rule <k> B1:Bool ~> #hole && B2 => B1 && B2 ... </k>
+  rule <k> B1:Bool ~> ! #hole => ! B1 ... </k>
 ```
 
 ### Conditional

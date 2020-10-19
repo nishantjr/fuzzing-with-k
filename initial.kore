@@ -48,10 +48,6 @@ Lbl'-LT-'generatedTop'-GT-'{}(
             /* Fl Fn D Sfa Cl */ /* builtin: */ Lbl'Stop'Map{}()
         )
     ),
-    /* Fl Fn D Sfa Cl */
-    Lbl'-LT-'generatedCounter'-GT-'{}(
-        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
-    ),
     /* Fl Fn D Sfc */
     Lbl'-LT-'pgm'-GT-'{}(
         /* Fl Fn D Sfc */
@@ -92,5 +88,10 @@ Lbl'-LT-'generatedTop'-GT-'{}(
             ),
             /* Fl Fn D Sfa Cl */ dotk{}()
         )
-    )
+    ),
+    /* Fl Fn D Sfa Cl */
+    Lbl'-LT-'generatedCounter'-GT-'{}(
+        /* Fl Fn D Sfa Cl */ /* builtin: */ \dv{SortInt{}}("0")
+    ),
+    Lbl'-LT-'ruleInstrumentation'-GT-'{}( dotk{}() )
 )
