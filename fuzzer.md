@@ -81,7 +81,7 @@ module FUZZER
     configuration <k> fuzz(20, $PGM:Pattern) </k>
                   <rand> String2Base("fffffffffffffffffffffffffffffffffffff", 16) </rand> // Gradually reducing frequency of set bits
                   <out stream="stdout"> .List </out>
-    
+
     syntax PrePattern ::= Pattern
     syntax KResult ::= Pattern
 
@@ -90,7 +90,7 @@ module FUZZER
 
     syntax KItem ::= fuzz(Int, PrePattern) [seqstrict(2)]
     rule <k> fuzz(N, P) => choose(N -Int 1, exec(P)) ... </k> requires N >Int 0 andBool \or{_}(_, _) :/=K P
-    rule <k> fuzz(0, P) => print(pretty(P))          ... </k>
+    rule <k> fuzz(0, P) => print(pretty(concretize(P))) ... </k>
 
     syntax PrePattern ::= exec(Pattern)
     rule <k> exec(Pattern)
@@ -115,11 +115,11 @@ module FUZZER
     rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k>
          <rand> Rand => Rand /Int 2 </rand>
       requires Rand %Int 2 ==Int 1
-    rule <k> choose(N, \or{_}(P1, P2)) => print(pretty(P1)) ~> choose(N, P2) ... </k>
+    rule <k> choose(N, \or{_}(P1, P2)) => print(pretty(concretize(P1))) ~> choose(N, P2) ... </k>
          <rand> Rand => Rand /Int 2 </rand>
       requires Rand %Int 2 ==Int 0
-    rule <k> choose(N, P) => fuzz(N, P)       ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
-    rule <k> choose(N, P) => print(pretty(P)) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
+    rule <k> choose(N,  P) => fuzz(N, P)                   ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
+    rule <k> choose(_N, P) => print(pretty(concretize(P))) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
 
     syntax PrePattern ::= unparse(PreString) [seqstrict]
     rule <k> unparse(MetaKore) => #parseKORE(MetaKore):Pattern ... </k>
@@ -128,7 +128,7 @@ module FUZZER
     rule <k> system(Command) => #system(Command) ... </k>
     rule <k> #systemResult(0, StdOut, _) => StdOut ... </k>
 
-    syntax PreString ::= pretty(Pattern)
+    syntax PreString ::= pretty(PrePattern) [seqstrict]
     rule <k> pretty(Pattern)
           => write("tmp/pretty", unparsePattern(Pattern))
           ~> system("kprint .build/defn/imp-haskell/imp-kompiled/ tmp/pretty false true")
@@ -138,6 +138,48 @@ module FUZZER
     syntax KItem ::= print(PreString) [seqstrict]
     rule <k> print(S:String) => .K ... </k>
          <out> ... .List => ListItem(S) </out>
+
+```
+
+Given a Pre Pattern with variables, convert to
+a pattern where variables are replaced by concrete values
+
+```k
+    syntax PrePattern ::= concretize(Pattern)
+    rule <k> concretize(P) => concretizePattern(P) ... </k>
+
+    syntax Patterns ::= concretizePatterns(Patterns) [function]
+    rule concretizePatterns(P, Ps) => concretizePattern(P) +Patterns concretizePatterns(Ps)
+    rule concretizePatterns(.Patterns) => .Patterns
+
+    syntax Pattern  ::= concretizePattern(Pattern)   [function]
+    rule concretizePattern(Symbol{Sorts}(Patterns))
+      => Symbol{Sorts}(concretizePatterns(Patterns))
+
+    syntax KVar ::= "Lbl'UndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids" [token]
+                  | "Lbl'Stop'List'LBraQuotUndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids'QuotRBraUnds'Ids" [token]
+                  | "SortInt" [token]
+                  | "SortBool" [token]
+                  | "SortBlock" [token]
+                  | "SortStmt" [token]
+                  | "SortAExp" [token]
+                  | "SortBExp" [token]
+                  | "Lblnoop" [token]
+
+    rule concretizePattern(\and{S}(P1, P2)) => \and{S}(concretizePattern(P1), concretizePattern(P2))
+    rule concretizePattern(\or{S}(P1, P2)) => \or{S}(concretizePattern(P1), concretizePattern(P2))
+    rule concretizePattern(\equals{S1, S2}(P1, P2)) => \equals{S1, S2}(concretizePattern(P1), concretizePattern(P2))
+    rule concretizePattern(\not{S}(P)) => \not{S}(concretizePattern(P))
+    rule concretizePattern((\dv{_}(_)) #as Dv::Pattern) => Dv
+    rule concretizePattern((\top{_}()) #as Top::Pattern) => Top
+    rule concretizePattern((\bottom{_}()) #as Bot::Pattern) => Bot
+    rule concretizePattern(inj{S1, S2}(P)) => inj{S1, S2}(concretizePattern(P))
+    rule concretizePattern(_ : SortInt{}) => \dv{SortInt{}}("2")
+    rule concretizePattern(V : SortAExp{}) => inj{SortInt{}, SortAExp{}}(concretizePattern(V : SortInt{}))
+    rule concretizePattern(_ : SortBool{}) => \dv{SortBool{}}("false")
+    rule concretizePattern(V : SortBExp{}) => inj{SortBool{}, SortBExp{}}(concretizePattern(V : SortBool{}))
+    rule concretizePattern(_ : SortBlock{}) => Lblnoop{.Sorts}(.Patterns) 
+    rule concretizePattern(V : SortStmt{}) => inj{SortBlock{}, SortStmt{}}(concretizePattern(V : SortBlock{}))
 ```
 
 Checks if a rule has been exercised more than 3 times.
@@ -155,19 +197,19 @@ Checks if a rule has been exercised more than 3 times.
       => false
     rule withinRuleLimits(.Patterns, _) => true
 
-    syntax KVar ::= "Lbl'-LT-'generatedTop'-GT-'" [token] 
-    syntax KVar ::= "Lbl'-LT-'ruleInstrumentation'-GT-'" [token] 
+    syntax KVar ::= "Lbl'-LT-'generatedTop'-GT-'" [token]
+    syntax KVar ::= "Lbl'-LT-'ruleInstrumentation'-GT-'" [token]
     syntax Patterns ::= getRuleInstrumentation(Pattern) [function]
     rule getRuleInstrumentation(\and{_}(P1, P2)) => getRuleInstrumentation(P1) +Patterns getRuleInstrumentation(P2)
     rule getRuleInstrumentation(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_, _, _, Lbl'-LT-'ruleInstrumentation'-GT-'{.Sorts}(KSeq)))
       => kseqToPatterns(KSeq)
     rule getRuleInstrumentation(\equals{_, _}(_, _)) => .Patterns
     rule getRuleInstrumentation(\not{_}(_))          => .Patterns
-    
+
     syntax Patterns ::= kseqToPatterns(Pattern) [function]
     rule kseqToPatterns(dotk{.Sorts}(.Patterns)) => .Patterns
     rule kseqToPatterns(kseq{.Sorts}(P, Ps)) => P, kseqToPatterns(Ps)
-    
+
     syntax Patterns ::= Patterns "+Patterns" Patterns [function]
     rule (P1, P1s) +Patterns P2s => P1, (P1s +Patterns P2s)
     rule .Patterns +Patterns P2s => P2s
