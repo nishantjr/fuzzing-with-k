@@ -90,7 +90,7 @@ module FUZZER
 
     syntax KItem ::= fuzz(Int, PrePattern) [seqstrict(2)]
     rule <k> fuzz(N, P) => choose(N -Int 1, exec(P)) ... </k> requires N >Int 0 andBool \or{_}(_, _) :/=K P
-    rule <k> fuzz(0, P) => print(pretty(concretize(P))) ... </k>
+    rule <k> fuzz(0, P) => finalize(P) ... </k>
 
     syntax PrePattern ::= exec(Pattern)
     rule <k> exec(Pattern)
@@ -111,15 +111,19 @@ module FUZZER
              ...
          </k>
 
+    syntax KItem ::= finalize(Pattern) [seqstrict]
+    rule <k> finalize(\or{_}(P1, P2)) => finalize(P1) ~> finalize(P2) ... </k>
+    rule <k> finalize(P) => print(pretty(concretize(P))) ... </k> requires \or{_}(_, _) :/=K P
+
     syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
     rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k>
          <rand> Rand => Rand /Int 2 </rand>
       requires Rand %Int 2 ==Int 1
-    rule <k> choose(N, \or{_}(P1, P2)) => print(pretty(concretize(P1))) ~> choose(N, P2) ... </k>
+    rule <k> choose(N, \or{_}(P1, P2)) => finalize(P1) ~> choose(N, P2) ... </k>
          <rand> Rand => Rand /Int 2 </rand>
       requires Rand %Int 2 ==Int 0
-    rule <k> choose(N,  P) => fuzz(N, P)                   ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
-    rule <k> choose(_N, P) => print(pretty(concretize(P))) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
+    rule <k> choose(N,  P) => fuzz(N, P)  ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
+    rule <k> choose(_N, P) => finalize(P) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
 
     syntax PrePattern ::= unparse(PreString) [seqstrict]
     rule <k> unparse(MetaKore) => #parseKORE(MetaKore):Pattern ... </k>
@@ -138,7 +142,6 @@ module FUZZER
     syntax KItem ::= print(PreString) [seqstrict]
     rule <k> print(S:String) => .K ... </k>
          <out> ... .List => ListItem(S) </out>
-
 ```
 
 Given a Pre Pattern with variables, convert to
