@@ -35,7 +35,7 @@ argument, because we want to give it a short-circuit semantics.
                  | "!" BExp                   [color(pink)]
                  > BExp "&&" BExp             [left, color(pink)]
                  | "(" BExp ")"               [bracket]
-  syntax Block ::= "{" "}"
+  syntax Block ::= "{" "}"                    [klabel(noop), symbol]
                  | "{" Stmt "}"               [format(%1%i%n%2%d%n%3)]
   syntax Stmt  ::= Block
                  | Id "=" AExp ";"            [strict(2), color(pink), format(%1 %2 %3%4)]
