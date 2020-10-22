@@ -113,7 +113,7 @@ module FUZZER
 
     syntax KItem ::= finalize(Pattern) [seqstrict]
     rule <k> finalize(\or{_}(P1, P2)) => finalize(P1) ~> finalize(P2) ... </k>
-    rule <k> finalize(P) => print(pretty(concretize(P))) ... </k> requires \or{_}(_, _) :/=K P
+    rule <k> finalize(P) => print(pretty(getProgram(concretize(P)))) ... </k> requires \or{_}(_, _) :/=K P
 
     syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
     rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k>
@@ -149,15 +149,11 @@ a pattern where variables are replaced by concrete values
 
 ```k
     syntax PrePattern ::= concretize(Pattern)
-    rule <k> concretize(P) => concretizePattern(P) ... </k>
+    rule <k> concretize(P) => first(concretizePattern(P)) ... </k>
 
     syntax Patterns ::= concretizePatterns(Patterns) [function]
     rule concretizePatterns(P, Ps) => concretizePattern(P) +Patterns concretizePatterns(Ps)
     rule concretizePatterns(.Patterns) => .Patterns
-
-    syntax Pattern  ::= concretizePattern(Pattern)   [function]
-    rule concretizePattern(Symbol{Sorts}(Patterns))
-      => Symbol{Sorts}(concretizePatterns(Patterns))
 
     syntax KVar ::= "Lbl'UndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids" [token]
                   | "Lbl'Stop'List'LBraQuotUndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids'QuotRBraUnds'Ids" [token]
@@ -169,20 +165,31 @@ a pattern where variables are replaced by concrete values
                   | "SortBExp" [token]
                   | "Lblnoop" [token]
 
-    rule concretizePattern(\and{S}(P1, P2)) => \and{S}(concretizePattern(P1), concretizePattern(P2))
-    rule concretizePattern(\or{S}(P1, P2)) => \or{S}(concretizePattern(P1), concretizePattern(P2))
-    rule concretizePattern(\equals{S1, S2}(P1, P2)) => \equals{S1, S2}(concretizePattern(P1), concretizePattern(P2))
-    rule concretizePattern(\not{S}(P)) => \not{S}(concretizePattern(P))
+    syntax Pattern ::= first(Patterns) [function]
+    rule first(P, Ps) => P
+
+    syntax Patterns ::= concretizePattern(Pattern)   [function]
+    rule concretizePattern(Symbol{Sorts}(Patterns)) => Symbol{Sorts}(concretizePatterns(Patterns))
+    rule concretizePattern(\and{S}(P1, P2)) => concretizePattern(P1) +Patterns concretizePattern(P2)
+    rule concretizePattern(\equals{S1, S2}(P1, P2)) => .Patterns
+    rule concretizePattern(\not{S}(P)) => .Patterns
     rule concretizePattern((\dv{_}(_)) #as Dv::Pattern) => Dv
-    rule concretizePattern((\top{_}()) #as Top::Pattern) => Top
-    rule concretizePattern((\bottom{_}()) #as Bot::Pattern) => Bot
-    rule concretizePattern(inj{S1, S2}(P)) => inj{S1, S2}(concretizePattern(P))
+    rule concretizePattern((\top{_}()) #as Top::Pattern) => .Patterns
+    rule concretizePattern((\bottom{_}()) #as Bot::Pattern) => .Patterns
+    rule concretizePattern(inj{S1, S2}(P)) => inj{S1, S2}(first(concretizePattern(P)))
     rule concretizePattern(_ : SortInt{}) => \dv{SortInt{}}("2")
-    rule concretizePattern(V : SortAExp{}) => inj{SortInt{}, SortAExp{}}(concretizePattern(V : SortInt{}))
+    rule concretizePattern(V : SortAExp{}) => inj{SortInt{}, SortAExp{}}(first(concretizePattern(V : SortInt{})))
     rule concretizePattern(_ : SortBool{}) => \dv{SortBool{}}("false")
-    rule concretizePattern(V : SortBExp{}) => inj{SortBool{}, SortBExp{}}(concretizePattern(V : SortBool{}))
+    rule concretizePattern(V : SortBExp{}) => inj{SortBool{}, SortBExp{}}(first(concretizePattern(V : SortBool{})))
     rule concretizePattern(_ : SortBlock{}) => Lblnoop{.Sorts}(.Patterns) 
-    rule concretizePattern(V : SortStmt{}) => inj{SortBlock{}, SortStmt{}}(concretizePattern(V : SortBlock{}))
+    rule concretizePattern(V : SortStmt{}) => inj{SortBlock{}, SortStmt{}}(first(concretizePattern(V : SortBlock{})))
+```
+
+Extract the program cell from the configuration pattern
+
+```k
+    syntax PrePattern ::= getProgram(PrePattern) [seqstrict]
+    rule <k> getProgram(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_,_ {.Sorts }(P, .Patterns),_:Patterns)) => P ... </k>
 ```
 
 Checks if a rule has been exercised more than 3 times.
