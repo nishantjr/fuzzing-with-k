@@ -80,7 +80,6 @@ module FUZZER
 
     configuration <k> fuzz(20, $PGM:Pattern) </k>
                   <rand> String2Base("fffffffffffffffffffffffffffffffffffff", 16) </rand> // Gradually reducing frequency of set bits
-                  <out stream="stdout"> .List </out>
 
     syntax PrePattern ::= Pattern
     syntax KResult ::= Pattern
@@ -107,13 +106,13 @@ module FUZZER
 
     syntax KItem ::= "kore-exec" "(" path: String ")"
     rule <k> kore-exec(Path)
-          => unparse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --search search-pattern.kore --searchType FINAL --depth 1 --module IMP --pattern " +String Path))
+          => parse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --search search-pattern.kore --searchType FINAL --depth 1 --module IMP --pattern " +String Path))
              ...
          </k>
 
     syntax KItem ::= finalize(Pattern) [seqstrict]
     rule <k> finalize(\or{_}(P1, P2)) => finalize(P1) ~> finalize(P2) ... </k>
-    rule <k> finalize(P) => print(pretty(getProgram(concretize(P)))) ... </k> requires \or{_}(_, _) :/=K P
+    rule <k> finalize(P) => print(unparse(getProgram(concretize(P)))) ... </k> requires \or{_}(_, _) :/=K P
 
     syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
     rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k>
@@ -125,23 +124,21 @@ module FUZZER
     rule <k> choose(N,  P) => fuzz(N, P)  ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
     rule <k> choose(_N, P) => finalize(P) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
 
-    syntax PrePattern ::= unparse(PreString) [seqstrict]
-    rule <k> unparse(MetaKore) => #parseKORE(MetaKore):Pattern ... </k>
+    syntax PreString ::= unparse(PrePattern) [seqstrict]
+    rule <k> unparse(P) => unparsePattern(P) ... </k>
+
+    syntax PrePattern ::= parse(PreString) [seqstrict]
+    rule <k> parse(MetaKore) => #parseKORE(MetaKore):Pattern ... </k>
 
     syntax PreString ::= system(command: String)
     rule <k> system(Command) => #system(Command) ... </k>
     rule <k> #systemResult(0, StdOut, _) => StdOut ... </k>
 
-    syntax PreString ::= pretty(PrePattern) [seqstrict]
-    rule <k> pretty(Pattern)
-          => write("tmp/pretty", unparsePattern(Pattern))
-          ~> system("kprint .build/defn/imp-haskell/imp-kompiled/ tmp/pretty false true")
+    syntax KItem ::= print(PreString) [seqstrict]
+    rule <k> print(S:String)
+          => write("tmp/out/" +String Int2String(!I) +String ".kore", S)
              ...
          </k>
-
-    syntax KItem ::= print(PreString) [seqstrict]
-    rule <k> print(S:String) => .K ... </k>
-         <out> ... .List => ListItem(S) </out>
 ```
 
 Given a Pre Pattern with variables, convert to
@@ -157,6 +154,7 @@ a pattern where variables are replaced by concrete values
 
     syntax KVar ::= "Lbl'UndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids" [token]
                   | "Lbl'Stop'List'LBraQuotUndsCommUndsUnds'IMP-SYNTAX'Unds'Ids'Unds'Id'Unds'Ids'QuotRBraUnds'Ids" [token]
+                  | "SortId" [token]
                   | "SortInt" [token]
                   | "SortBool" [token]
                   | "SortBlock" [token]
@@ -177,6 +175,7 @@ a pattern where variables are replaced by concrete values
     rule concretizePattern((\top{_}()) #as Top::Pattern) => .Patterns
     rule concretizePattern((\bottom{_}()) #as Bot::Pattern) => .Patterns
     rule concretizePattern(inj{S1, S2}(P)) => inj{S1, S2}(first(concretizePattern(P)))
+    rule concretizePattern(_ : SortId{}) => \dv{SortId{}}("x")
     rule concretizePattern(_ : SortInt{}) => \dv{SortInt{}}("2")
     rule concretizePattern(V : SortAExp{}) => inj{SortInt{}, SortAExp{}}(first(concretizePattern(V : SortInt{})))
     rule concretizePattern(_ : SortBool{}) => \dv{SortBool{}}("false")
@@ -189,7 +188,7 @@ Extract the program cell from the configuration pattern
 
 ```k
     syntax PrePattern ::= getProgram(PrePattern) [seqstrict]
-    rule <k> getProgram(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_,_ {.Sorts }(P, .Patterns),_:Patterns)) => P ... </k>
+    rule <k> getProgram(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_,_ {.Sorts }(P, .Patterns),_:Patterns)) => first(kseqToPatterns(P)) ... </k>
 ```
 
 Checks if a rule has been exercised more than 3 times.
