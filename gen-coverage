@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -e
+
+# TODO: kompile
+# TOOO: Generate ets
+for t in out/*.kore; do
+  echo -en "\r$t"
+  kx --depth 10000 --output none --directory ./.build/defn/imp-llvm --parser cat $t > /dev/null
+done
+
+kcovr ./.build/defn/imp-llvm/imp-kompiled/ -- imp.md
