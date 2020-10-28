@@ -20,10 +20,17 @@ from kninja import *
 
 proj = KProject(extdir = extdir)
 
-imp =  proj.definition( alias         = 'imp-haskell'
+haskell =  proj.definition( alias         = 'imp-haskell'
+                          , main          = 'imp.md'
+                          , backend       = 'haskell'
+                          )
+
+llvm = proj.definition( alias       = 'imp-llvm'
                       , main          = 'imp.md'
-                      , backend       = 'haskell'
+                      , backend       = 'llvm'
+                      , flags         = '--coverage'
                       )
+
 
 fuzzer = proj.definition( alias       = 'fuzzer'
                       , main          = 'fuzzer.md'
