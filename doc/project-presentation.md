@@ -1,52 +1,20 @@
 ---
-title: Building language-agnostic semantics-aware test case generation
+title: Semantics-based test case generation
 author:
   - Nishant Rodrigues
   - Manasvi Saxena
 ---
 
-Motivation
-----------
+Overview
+--------
 
-:::columns
+Goal: Create a fuzzing tool that is both **language-agnostic** and **semantics-aware**
 
-::::column
-The Fuzzing tools we have seen so far, have either been:
+Our approach can be thought of as an extension of both:
 
-1.  Semantics-aware, language specific, but can find "deep" bugs
-
-    e.g. jsfunfuzz, KLEE, Korat
-
-2.  Language Agnostic, but semantics-unaware and can only find "shallow" bugs
-
-    e.g. AFL, LangFuzz
-::::
-
-::: {.column}
--   Large duplication of effort
--   New techniques need to be implemented and reimplemented for each language,
-    even though fuzzers for various languages are more similar than different.
-:::
-
-:::
-
-Semantics First Approach
-------------------------
-
-::: columns
-
-:::: column
-1. Define a formal semantics for your language
-2. Derive each tool from these semantics
-3. ???
-3. Profit
-::::
-
-::: column
-![](../k.png){width="100%"}
-:::
-
-:::
+* Skelatal Program Enumeration, and
+ 
+* Grammar based fuzzing
 
 The K Framework
 ---------------
@@ -72,7 +40,6 @@ Several languages are already defined:
 :::: {.column width=33%}
 Several tools can already be derived:
 
-
 * Parser
 * Interpreter
 * Model Checker
@@ -82,40 +49,43 @@ Several tools can already be derived:
 >  * <mark> Fuzzer? </mark>
 ::::
 
+:::: {.column width=33%}
+![](../../doc/k.png){width="100%"}
+::::
 :::
 
-What do K semantics look like?
-------------------------------
+What does a K semantics look like?
+----------------------------------
 
 :::columns
 
 :::: column
 
 
-```k
+``` {.k .dense}
 syntax AExp  ::= Int | Id
                | "-" Int
-               | AExp "/" AExp              [left, strict]
-               > AExp "+" AExp              [left, strict]
-               | "(" AExp ")"               [bracket]
+               | AExp "/" AExp      [left, strict]
+               > AExp "+" AExp      [left, strict]
+               | "(" AExp ")"       [bracket]
 syntax BExp  ::= Bool
-               | AExp "<=" AExp             [seqstrict, latex({#1}\leq{#2})]
-               | "!" BExp                   [strict]
-               > BExp "&&" BExp             [left, strict(1)]
-               | "(" BExp ")"               [bracket]
+               | AExp "<=" AExp     [seqstrict]
+               | "!" BExp           [strict]
+               > BExp "&&" BExp     [left, strict(1)]
+               | "(" BExp ")"       [bracket]
 syntax Block ::= "{" "}"
                | "{" Stmt "}"
 syntax Stmt  ::= Block
-               | Id "=" AExp ";"            [strict(2)]
+               | Id "=" AExp ";"    [strict(2)]
                | "if" "(" BExp ")"
-                 Block "else" Block         [strict(1)]
+                 Block "else" Block [strict(1)]
                | "while" "(" BExp ")" Block
-               > Stmt Stmt                  [left]
+               > Stmt Stmt          [left]
 syntax Pgm ::= "int" Ids ";" Stmt
 syntax Ids ::= List{Id,","}
 ```
 
-```k
+``` {.k .dense}
 configuration <T color="yellow">
                 <k color="green"> $PGM:Pgm </k>
                 <state color="red"> .Map </state>
@@ -125,9 +95,7 @@ configuration <T color="yellow">
 ::::
 
 :::: column
-
-
-```k
+``` {.k .dense}
   rule <k> X:Id => I ... </k>
        <state>... X |-> I ...</state>
 
@@ -164,21 +132,118 @@ configuration <T color="yellow">
 
 :::
 
+Semantics-based test case generation
+------------------------------------
 
-Goals & Milestones
-------------------
+1. Execute a symbolic program "skeleton"
+2. Guide the execution process to avoid uninteresting programs
+3. Replace remaining symbolic variables with arbitary concrete values
 
-#### Develop a test case generator for K semantics
 
-1. [Engineering] Grammar based generation
-2. [Engineering] Use coverage information for feedback
-3. [Research]    Can we generate instrumentation in a language agnostic fashion?
-3. [Research]    Can we use the typing semantics of language to generate more interesting tests?
-4. [Research]    Can we combine symbolic execution with instrumentation in interesting ways?
+Executing symbolic programs
+---------------------------
 
-Evaluation
-----------
 
-1. Compare code coverage found using our tool with languages that already have fuzzers
-2. Try our fuzzer on a variety of languages: imperative, stack-based, functional
+:::columns
 
+:::: {.column }
+
+Leverage K's symbolic execution engine, and narrowing.
+
+* Execute a symbolic program "skeleton"
+* When symbolic variables are encountered, K "narrows" on those variables 
+* These choices are semantics-driven, so only semantically meaningful choices are made
+
+
+Most symbolic engines support this:
+
+```k
+  int x, y;
+  x = ?X:Int;
+  y = ?X:Int
+  while (x < y) { ... }
+  if (x == 2) { ... } 
+```
+
+::::
+
+:::: {.column }
+![](../../doc/narrowing-on-statements.png){width="50%"}
+
+K allows this:
+
+```k
+  int x, y;
+  ?V:Id = ?I:Int;
+  ?T1:Stmt
+  ?T2:Stmt
+```
+
+::::
+:::
+
+---------------------
+
+:::columns
+:::: column
+
+### Guidance needed
+
+* State-space is HUGE!
+* Suppose we generate a program that does not terminate?
+
+...
+
+* Limit the application of some rules
+
+::::
+:::: column
+### Concretization
+
+Since only branches that were executed are narrowed, there are still remaining symbolic variables
+
+```k
+  int x, y;
+  x = 2;
+  if ( false ) { ?S:Stmt }
+  ...
+```
+
+We chose arbitary values for remaining variables:
+
+```k
+  int x, y;
+  x = 2;
+  if ( false ) { { } }
+  ...
+```
+
+::::
+:::
+
+---
+
+:::columns
+:::: column
+
+### Prototype Evaluation
+
+* Generated 1988 programs in 10 minutes
+* Programs cover 100% of the language semantics
+
+### Caveats
+
+* Some manual modifications needed for instrumentation; We should automate these
+* Guidance heuristic is very simple, will probably not be good enough for more complex languages
+ 
+::::
+:::: column
+
+### Next steps
+
+* Port to other languages, and use as a source of tests for diffrential testing. Solidity? JavaScript?
+* Performance: Currently, we run K every time we take a step, this is expensive
+* Better integration with the K
+
+::::
+:::

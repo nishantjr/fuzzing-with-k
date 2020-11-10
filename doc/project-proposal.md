@@ -1,14 +1,25 @@
 ---
 title: Building a language-agnostic semantics-aware test case generator
+documentclass: acmart
 author:
-  - Nishant Rodrigues (nishant2@illinois.edu)
-  - Manasvi Saxena (msaxena2@illinois.edu)
+  - name: Nishant Rodrigues
+    email: nishant2@illinois.edu
+  - name: Manasvi Saxena
+    email: msaxena2@illinois.edu
 ---
 
+
 \newcommand {\K} {$\mathbb{K}$}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
 
 Abstract
 --------
+
+
+
+Motivation
+----------
 
 Test case generation tools need to be aware of the semantics of the tools they
 are targeting in order to generate programs the exercise "deep" paths. However,
@@ -16,20 +27,6 @@ their development is expensive and are only available for a few languages in
 widespread usage. Language agnostic fuzzers alllowing testing many more
 languages in the same tool reducing devlopment costs. Thus, most test case
 generation tools are either language-agnostic or semantics-aware, but not both.
-
-The semantics-first approach to language development gives us insight into how
-this problem can be solved. As prescribed by this approach, we will build a test
-case generator that is parametric over the formal semantics of the language. We
-intend to use the \K{} Framework as the basis of our work. This
-framework allows defining programming languages semantics and deriving various
-language tools (e.g. parsers, interpreters, deductive verifiers, symbolic
-execution engines...) from them. Currently, \K{} does not support test
-case generation. Our work will focus on adding a test case generator to
-\K{} and evaluating it with existing \K{} definitions of
-languages like the EVM and JavaScript.
-
-Motivation
-----------
 
 Test case generation tools we have seen so far, have either been: semantics-aware,
 language specific, but can find "deep" bugs (e.g. jsfunfuzz, KLEE, Korat) or,
@@ -43,14 +40,22 @@ needed, the same process is repeated, treating the natural language document as
 the source of truth. This kind of development goes against the traditionally
 software engineering goals we strive for such as DRY (don't repeat yourself).
 
-Fortunately, there is an alternative. The semantics-first school of thought
-prescribes first writing a *formal specification* of the language's semantics,
-and then using this specification as the source of truth. First, we define a
-formal semantics for your language. Then, from that formal semantics, we derive
-the various tool we need, such as parsers, compilers, interpreters, deduction
-engines and test case generators.
+The semantics-first approach to language development gives us insight into how
+this problem can be solved. As prescribed by this approach, we will build a test
+case generator that is parametric over the formal semantics of the language. We
+intend to use the \K{} Framework as the basis of our work. This
+framework allows defining programming languages semantics and deriving various
+language tools (e.g. parsers, interpreters, deductive verifiers, symbolic
+execution engines...) from them. Currently, \K{} does not support test
+case generation. Our work will focus on adding a test case generator to
+\K{} and evaluating it with existing \K{} definitions of
+languages like the EVM and JavaScript.
 
-![](k.png){width="100%"}
+\begin{wrapfigure}[15]{r}{0.45\textwidth}
+\includegraphics[width=0.45\textwidth]{k.png}
+\caption{The ideal language framework}
+\label{fig:ideal}
+\end{wrapfigure}
 
 The \K{} Framework is a language framework that takes such an approach. Several
 large, real-world languages are already have semantics defined in \K{}, such as C,
@@ -62,56 +67,192 @@ The \K{} Framework, however, does not yet derive a test case generator. This
 project aims to remedy that situation by developing a test case generator parametric over the
 input language that is both language-agnostic, and semantics-aware.
 
-\pagebreak
+Background
+----------
 
-Proposal & Milestones
----------------------
+\K{} semantics consists of three parts:
 
-In this project, we aim to use the existing language semantics to generate test programs.
-We divide this project into two parts. In the first, mostly an engineering effort, we
-will bring to the level of current language-agnostic frameworks. In the second,
-a higher-risk research effort, we will attempt to leverage the language semantics
-to generate more semantically interesting tests.
+1. the grammar of the language, described using `syntax` statements, in Figure \ref{fig:syntax}
+2. the "`configuration`", a nested record like structure representing the state of the program,
+   in Figure \ref{fig:configuration} and
+3. the semantics of the language, described using a set of `rule`s as transitions from on state to the next,
+   in Figure \ref{fig:semantics}.
 
-  --- ------------- -------------------------------------------------------------------------------------
-   1  Engineering   Grammar based generation
-   2  Engineering   Use coverage information for feedback for mutation
-   3  Research      Can we combine symbolic execution with instrumentation in interesting ways?
-   4  Research      Can we use the typing semantics of the language to generate more interesting tests?
-  --- ------------- -------------------------------------------------------------------------------------
+\begin{figure}[h]
+\footnotesize
+\begin{minipage}{0.38\textwidth}
+\begin{lstlisting}
+syntax AExp
+   ::= Int | Id
+     | "-" Int
+     | AExp "/" AExp  [strict]
+     > AExp "+" AExp  [strict]
+     | "(" AExp ")"   [bracket]
+syntax BExp
+   ::= Bool
+     | AExp "<=" AExp [seqstrict]
+     | "!" BExp       [strict]
+     > BExp "&&" BExp [left, strict(1)]
+     | "(" BExp ")"   [bracket]
+\end{lstlisting}
+\end{minipage}
+\begin{minipage}{0.33\textwidth}
+\begin{lstlisting}
+syntax Block
+   ::= "{" "}"
+     | "{" Stmt "}"
+syntax Stmt
+   ::= Block
+     | Id "=" AExp ";"
+     | "if" "(" BExp ")"
+       Block "else" Block
+     | "while" "(" BExp ")" Block
+     > Stmt Stmt
 
-1.  In our initial goal is to generate programs that are only syntactically
-    correct using the program grammar that is part of a \K{} semantics. We will do
-    this by extending \K{}'s haskell backend and using the Hedgehog haskell
-    library.
+syntax Pgm ::= "int" Ids ";" Stmt
+syntax Ids ::= List{Id,","}
+\end{lstlisting}
+\end{minipage}
+\begin{minipage}{0.18\textwidth}
+\begin{lstlisting}configuration
+configuration
+  <imp>
+    <k> $PGM:Pgm </k>
+    <state> .Map </state>
+  </imp>
+\end{lstlisting}
+\end{minipage}\caption{The syntax and configuration of the IMP programming language}
+\label{fig:syntax}
+\label{fig:configuration}
+\end{figure}
 
-2.  Our next goal is to leverage \K{}'s coverage information as a guide to which
-    programs are most interesting to mutate.
+\begin{figure}[h]
+\footnotesize
+\begin{minipage}{0.33\textwidth}
+\begin{lstlisting}
+syntax KResult ::= Int | Bool
 
+// Blocks and Statements
+rule S1:Stmt S2:Stmt => S1 ~> S2
+rule {} => .
+rule {S} => S
 
-From there, we move on to more research questions.
+// Control Structure
+rule if (true)  S else _ => S
+rule if (false) _ else S => S
 
-3.  Research Question: Can we combine symbolic execution with instrumentation in
-    interesting ways?
+rule while (B) S
+  => if (B) {S while (B) S} else {}
+\end{lstlisting}
+\end{minipage}
+\begin{minipage}{0.26\textwidth}
+\begin{lstlisting}
+// Arithmetic
+rule I1 / I2 => I1 /Int I2
+  requires I2 =/=Int 0
+rule I1 + I2 => I1 +Int I2
+rule - I1 => 0 -Int I1
 
-    We hope that this will allow us to generate programs that exercise more of
-    the programs semantics, e.g. by only using variables that have already been
-    declared.
+rule I1 <= I2 => I1 <=Int I2
+rule ! T => notBool T
+rule true && B => B
+rule false && _ => false
+\end{lstlisting}
+\end{minipage}
+\begin{minipage}{0.31\textwidth}
+\begin{lstlisting}
+rule <k> int (X,Xs => Xs);_ </k>
+     <state> Rho:Map (.Map => X|->0) </state>
+  requires notBool (X in keys(Rho))
+rule int .Ids; S => S
+// variable lookup
+rule <k> X:Id => I ...</k>
+     <state>... X |-> I ...</state>
+// Assignment
+rule <k> X = I:Int; => . ...</k>
+     <state>... X |-> (_ => I) ...</state>
+\end{lstlisting}
+\end{minipage}
+\caption{The semantics and configuration of the IMP programming language}
+\label{fig:semantics}
+\end{figure}
 
-4.  The typing semantics for languages may also defined in \K{}. This may allow us
-    to define a type-based generator as an improvement over grammar based ones.
+Our solution
+------------
 
+In this project (<https://github.com/nishantjr/fuzzing-with-k/>), we leverage \K{} to perform semantics-based fuzzing.
+Our method of fuzzing can be viewed as an extension simultanuously of grammar-based fuzzing and
+of skeleton-based fuzzing.
+Our tool will take advantage of \K{}'s symbolic execution engine.
+This symbolic engine is much more general than traditional language specific engines.
+Most symbolic exection engines are restricted to executing programs where particular variables are assigned symbolic values.
+\K{}, however, being a language framework, has no distinction
+between program values, such as integers, strings, objects, etc
+and program constructs such as statements, conditionals, and while loops.
+This means that we may execute a **symbolic program**, i.e. one where parts of the program themselves are symbolic.
+
+We feed as input to our tool, a program skeleton with certain positions in the AST holding symbolic variables.
+These symbolic variables may be instantiated not just by values, but also by statements, class and function declarations
+etc. For example, when prototyping our technique against the IMP programming language above, we used the following symbolic program
+as input:
+
+```
+  int x, y;
+  ?V:Id = ?I:Int;
+  ?T1:Stmt
+  ?T2:Stmt
+```
+
+In this skeleton, we have a program with two variables `x` and `y`, an
+assignment statement, followed by two arbitary statements.
+The \K{} symbolic engine first adds the `x` and `y` variables to the environment.
+
+\begin{wrapfigure}[11]{r}{0.35\textwidth}
+\includegraphics[width=0.35\textwidth]{narrowing-on-statements.png}
+\caption{Narrowing on a symbolic program}
+\label{fig:ideal}
+\end{wrapfigure}
+
+It then encounters a symbolic statement. \K{} *narrows* (rewrites over symbolic terms) on that statement,
+chosing each possible case instantiation of the symbolic variable. For example, \K{} a symbolic statement
+may narrow into each of an assignment, an if statement, a while loop and so on.
+Each of the parameters that these constucts take may then be further narrowed on.
+For example, the left hand side of an assignment may narrow into various identifiers,
+and the right hand side into various expressions.
+Importantly, since the narrowing is driven by the semantic rules for the language,
+only semantically interesting programs are generated.
+For example, only declared variables are chosen for both the right and the left hand side of the
+assignemnt statement. Magic numbers used in the semantics (e.g. if division by zero is a special case in the semantics)
+are also found and exploited.
+
+Simply enumerating as many programs as possible with this method is not viable however, since the search space
+is unbounded. Further, we may spend a lot of time repeatedly exercising the same areas
+of the semantics, for example, by generating deeply nested but uninteresting expressions on the right hand side
+of the assignement in the first statement, without proceeding to the next one.
+It is also easy to generate programs that loop forever. We must guide this search for it to be useful.
+
+We do so using a simple coverage metric -- we stop symbolic execution one a program has executed any
+rule from a particular set a certain number of times. Besides guiding the semantics, this also
+deals with non-terminating programs by dissallowing the rule for while loops executing too many times.
+At this point, we concretize any remaining variables by chosing arbitary values for any remaining meta-variables.
 
 Evaluation
 ----------
 
-1.  Compare code coverage found using our tool with languages that already have
-    test case generator
-2.  Run the tests generated by our generator, and run them against other
-    interpreters for the same language. This would be useful for e.g. finding
-    bugs in other JavaScript interpreters.
-3.  Try our generator on a variety of languages: imperative, stack-based,
-    functional
+We evaluated our prototype by generating programs for the IMP programing language.
+Using the skeleton above, we generated 1988 programs in under 10 minutes.
+These programs have 100% coverage: they execute every semantic rule in the definition.
 
+Next Steps
+----------
 
+Imporve concretization procedure: Currently, during the concretization process, we simple chose a value hard coded value for each sort.
+E.g. we always chose "2" for any symbolic integer remaining in the program. We completely ignore the constraints that \K{} has generated.
+We should instead use an SMT solver to generate a number of values that tr
+
+Improve coverage metric: Our current coverage guidance is quite simple -- we stop executing on branches where a rule has been executed a certain number of times.
+This may suffice in a simple language like K, however, this may still be a massive search space for more complex langauges.
+A more interesting heuristic may prefer programs that exercise rules that haven't been seen before, or even orderings of rules that haven't been seen.
+
+  
 
