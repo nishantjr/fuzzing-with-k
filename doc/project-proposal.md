@@ -28,20 +28,18 @@ widespread usage. Language agnostic fuzzers alllowing testing many more
 languages in the same tool reducing devlopment costs. Thus, most test case
 generation tools are either language-agnostic or semantics-aware, but not both.
 
-Test case generation tools we have seen so far, have either been: semantics-aware,
-language specific, but can find "deep" bugs (e.g. jsfunfuzz, KLEE, Korat) or,
-language agnostic, but semantics-unaware and only able to find "shallow" bugs
-(e.g. AFL, LangFuzz).
+Most test case generation tools are either been: semantics-aware,
+language specific, but can find semantically interesting bugs (e.g. jsfunfuzz, KLEE, Korat) or,
+language agnostic, but semantics-unaware and only able to find "shallow" bugs (e.g. AFL, LangFuzz).
 
-This is because of the way programming languages are traditionally developed --
-A rough natural language design or specification is written This is used to
-guide the writing of a compiler or interpreter. When other language tools are
-needed, the same process is repeated, treating the natural language document as
-the source of truth. This kind of development goes against the traditionally
-software engineering goals we strive for such as DRY (don't repeat yourself).
+This is because of the way programming languages are traditionally developed.
+A rough natural-language design or specification is written first.
+This is used to guide the writing of a compiler or interpreter.
+When other language tools are needed, the same process is repeated, treating the natural language document as the source of truth.
+This kind of development goes against the traditionally software engineering principals such as DRY (don't repeat yourself).
 
-The semantics-first approach to language development gives us insight into how
-this problem can be solved. As prescribed by this approach, we will build a test
+The semantics-first approach to language development gives us insight into how this problem can be solved.
+As prescribed by this approach, we will build a test
 case generator that is parametric over the formal semantics of the language. We
 intend to use the \K{} Framework as the basis of our work. This
 framework allows defining programming languages semantics and deriving various
@@ -230,11 +228,30 @@ is unbounded. Further, we may spend a lot of time repeatedly exercising the same
 of the semantics, for example, by generating deeply nested but uninteresting expressions on the right hand side
 of the assignement in the first statement, without proceeding to the next one.
 It is also easy to generate programs that loop forever. We must guide this search for it to be useful.
-
 We do so using a simple coverage metric -- we stop symbolic execution one a program has executed any
 rule from a particular set a certain number of times. Besides guiding the semantics, this also
 deals with non-terminating programs by dissallowing the rule for while loops executing too many times.
-At this point, we concretize any remaining variables by chosing arbitary values for any remaining meta-variables.
+
+At this point, we are left with a program that, while more fleshed out than the original skeleton, still has some symbolic "holes" in it.
+For example, since only branches that were executed are narrowed, there are still remaining symbolic variables.
+
+```k
+  int x, y;
+  x = 2;
+  if ( false ) { ?S:Stmt }
+  ...
+```
+
+We chose arbitary values for remaining variables:
+
+```k
+  int x, y;
+  x = 2;
+  if ( false ) { { } }
+  ...
+```
+
+resulting in a concrete program that may be executed by any interpreter for that language.
 
 Evaluation
 ----------
@@ -253,6 +270,4 @@ We should instead use an SMT solver to generate a number of values that tr
 Improve coverage metric: Our current coverage guidance is quite simple -- we stop executing on branches where a rule has been executed a certain number of times.
 This may suffice in a simple language like K, however, this may still be a massive search space for more complex langauges.
 A more interesting heuristic may prefer programs that exercise rules that haven't been seen before, or even orderings of rules that haven't been seen.
-
-  
 
