@@ -78,7 +78,8 @@ module FUZZER
     imports K-REFLECTION
     imports MAP
 
-    configuration <k> fuzz(20, $PGM:Pattern) </k>
+    configuration <k> fuzz($MaxDepth, $PGM:Pattern) </k>
+                  <ruleLimit> $RuleLimit </ruleLimit>
                   <rand> String2Base("fffffffffffffffffffffffffffffffffffff", 16) </rand> // Gradually reducing frequency of set bits
 
     syntax PrePattern ::= Pattern
@@ -191,7 +192,7 @@ Extract the program cell from the configuration pattern
     rule <k> getProgram(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_,_ {.Sorts }(P, .Patterns),_:Patterns)) => first(kseqToPatterns(P)) ... </k>
 ```
 
-Checks if a rule has been exercised more than 3 times.
+Checks if a rule has been exercised more than `<ruleLimit>` times.
 
 ```k
     syntax Bool ::= withinRuleLimits(Pattern) [function]
@@ -200,10 +201,13 @@ Checks if a rule has been exercised more than 3 times.
     syntax Bool ::= withinRuleLimits(Patterns, Map) [function]
     rule withinRuleLimits((R, Rs),                  M)
       => withinRuleLimits((R, Rs), (R |-> 0)        M) requires notBool R in_keys(M)
-    rule withinRuleLimits((R, Rs), (R |-> N)        M)
-      => withinRuleLimits(    Rs , (R |-> N +Int 1) M) requires N <Int 3
-    rule withinRuleLimits((R,_Rs), (R |-> 3)       _M)
-      => false
+    rule [[ withinRuleLimits((R, Rs), (R |-> N)        M)
+         => withinRuleLimits(    Rs , (R |-> N +Int 1) M)
+         ]] 
+         <ruleLimit> RuleLimit </ruleLimit>
+      requires N <Int RuleLimit
+    rule [[ withinRuleLimits((R,_Rs), (R |-> RuleLimit) _M) => false ]]
+         <ruleLimit> RuleLimit </ruleLimit>
     rule withinRuleLimits(.Patterns, _) => true
 
     syntax KVar ::= "Lbl'-LT-'generatedTop'-GT-'" [token]
