@@ -1,6 +1,7 @@
 ---
 title: Building a language-agnostic semantics-aware test case generator
 documentclass: acmart
+classoption: sigconf
 author:
   - name: Nishant Rodrigues
     email: nishant2@illinois.edu
@@ -49,11 +50,11 @@ case generation. Our work will focus on adding a test case generator to
 \K{} and evaluating it with existing \K{} definitions of
 languages like the EVM and JavaScript.
 
-\begin{wrapfigure}[15]{r}{0.45\textwidth}
+\begin{figure}[h]
 \includegraphics[width=0.45\textwidth]{k.png}
 \caption{The ideal language framework}
 \label{fig:ideal}
-\end{wrapfigure}
+\end{figure}
 
 The \K{} Framework is a language framework that takes such an approach. Several
 large, real-world languages are already have semantics defined in \K{}, such as C,
@@ -205,11 +206,11 @@ In this skeleton, we have a program with two variables `x` and `y`, an
 assignment statement, followed by two arbitary statements.
 The \K{} symbolic engine first adds the `x` and `y` variables to the environment.
 
-\begin{wrapfigure}[11]{r}{0.35\textwidth}
-\includegraphics[width=0.35\textwidth]{narrowing-on-statements.png}
+\begin{figure}[h]
+\includegraphics[width=0.45\textwidth]{narrowing-on-statements.png}
 \caption{Narrowing on a symbolic program}
 \label{fig:ideal}
-\end{wrapfigure}
+\end{figure}
 
 It then encounters a symbolic statement. \K{} *narrows* (rewrites over symbolic terms) on that statement,
 chosing each possible case instantiation of the symbolic variable. For example, \K{} a symbolic statement
