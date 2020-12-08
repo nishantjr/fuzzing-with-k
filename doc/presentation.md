@@ -51,7 +51,7 @@ Several tools can already be derived:
 * Model Checker
 * Deductive Verifier
 * Equivalence checker
-* 
+*
 ::::::
 
 :::::: {.fragment .fade-in-then-out}
@@ -62,7 +62,7 @@ Several tools can already be derived:
 * Model Checker
 * Deductive Verifier
 * Equivalence checker
-* <mark> Fuzzer? </mark> 
+* <mark> Fuzzer? </mark>
 ::::::
 
 :::::
@@ -167,7 +167,7 @@ Most symbolic engines support this:
   x = ☐:Int;
   y = ☐:Int;
   while (x < y) { ... }
-  if (x == 2) { ... } 
+  if (x == 2) { ... }
 ```
 :::::
 ::::
@@ -202,12 +202,12 @@ Semantics-based test case generation
 
 * The user selects a symbolic skeleton.
 
-* This skeleton allows us to guide the tool to target particular features 
+* This skeleton allows us to guide the tool to target particular features
 
 * e.g. It is unlikely that 4 variables would be able to trigger many more bugs than 3
 
 * The user may select multiple skeletons to target distinct areas of the language
- 
+
 ::::
 
 :::: {.column }
@@ -240,7 +240,7 @@ int x, y;
 // Assignment
 rule
   <k> X = I:Int; => . ... </k>
-  <state> 
+  <state>
     ... X |-> (_ => I) ...
   </state>
 
@@ -333,10 +333,69 @@ We choose arbitary values for remaining variables:
 
 * Some manual modifications needed for instrumentation; We should automate these
 * Guidance heuristic is very simple, will probably not be good enough for more complex languages
+* Imp is untyped - grammatically correct programs are well typed.
 
-### Next steps
+## Interesting Programs
 
-* Port to other languages, and use as a source of tests for diffrential testing. Solidity? JavaScript?
+```k
+int x, y, .Ids;
+x = 2;
+{
+  {
+    {
+      if (2 / 2 <= -2 / 2 / 2 / 2) { } else { }
+    }
+  }
+}
+{ }
+```
+
+```k
+int x, y, .Ids;
+x = 2;
+{
+  {
+    x = 2;
+  }
+}
+while (! ! ! ( false && false )) { }
+```
+
+## Next steps
+
+* Port to other languages, and use as a source of tests for diffrential testing.
 * Performance: Currently, we run 𝕂 every time we take a step, this is expensive
 * Better integration with the 𝕂
+
+
+## Target Language
+
+### Webassembly
+
+* New stack based language with engines in *all major* browsers
+  (firefox, chrome, safari, edge)
+* Formally defined as a part of the [KWasm project](https://github.com/kframework/wasm-semantics)
+* Ideal target for differential testing against browser engines
+* Also basis of eWasm, an alternate execution layer for Ethereum
+* For evaluation, intend to find issues in popular webassembly engines using
+  our fuzzer
+
+
+## Developing K
+
+### Automated Instrumentation
+
+* K's *kompiler* generates a logical theory
+  for a language definition
+* Working with K team to change *kompile* to automatically
+  generate information needed for rule coverage metrics used in the
+  fuzzer
+
+### Better Integration via Strategies
+
+* Currently, K doesn't have a *generic* strategy language to
+  guide execution, search.
+* Plan to introduce *execution strategies* in K to guide
+  fuzzer.
+* Would allow for a flexible mechanism to guide fuzzing process
 
