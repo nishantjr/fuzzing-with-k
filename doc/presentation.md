@@ -15,7 +15,7 @@ Goal: Create a fuzzing tool that is both **language-agnostic** and **semantics-a
 
 Our approach can be thought of as an extension of both:
 
-* Skelatal Program Enumeration, and
+* Skeletal Program Enumeration, and
 * Grammar based fuzzing
 
 The 𝕂 Framework
@@ -315,7 +315,7 @@ Since only branches that were executed are narrowed, there are still remaining s
   ...
 ```
 
-We choose arbitary values for remaining variables:
+We choose arbitrary values for remaining variables:
 
 ```k
   int x, y;
@@ -363,7 +363,7 @@ while (! ! ! ( false && false )) { }
 
 ## Next steps
 
-* Port to other languages, and use as a source of tests for diffrential testing.
+* Port to other languages, and use as a source of tests for differential testing.
 * Performance: Currently, we run 𝕂 every time we take a step, this is expensive
 * Better integration with the 𝕂
 
