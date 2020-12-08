@@ -5,5 +5,5 @@ cd $(dirname $0)
 mkdir -p ../.build/doc
 pandoc --standalone -t slidy --css=../../doc/presentation.css \
         project-presentation.md  -o ../.build/doc/presentation.html
-pandoc --standalone -t latex --template ./template.tex --listings \
-        project-proposal.md  -o ../.build/doc/project-proposal.pdf
+# pandoc --standalone -t latex --template ./template.tex --listings \
+#         project-proposal.md  -o ../.build/doc/project-proposal.pdf
