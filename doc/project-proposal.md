@@ -229,7 +229,7 @@ is unbounded. Further, we may spend a lot of time repeatedly exercising the same
 of the semantics, for example, by generating deeply nested but uninteresting expressions on the right hand side
 of the assignement in the first statement, without proceeding to the next one.
 It is also easy to generate programs that loop forever. We must guide this search for it to be useful.
-We do so using a simple coverage metric -- we stop symbolic execution one a program has executed any
+We do so using a simple coverage metric -- we stop symbolic execution once a program has executed any
 rule from a particular set a certain number of times. Besides guiding the semantics, this also
 deals with non-terminating programs by dissallowing the rule for while loops executing too many times.
 
