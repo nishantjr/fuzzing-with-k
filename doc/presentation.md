@@ -308,7 +308,7 @@ What about infinite loops?
 
 Since only branches that were executed are narrowed, there are still remaining symbolic variables:
 
-```k
+```c
   int x, y;
   x = 2;
   if ( false ) { ?S:Stmt }
@@ -317,7 +317,7 @@ Since only branches that were executed are narrowed, there are still remaining s
 
 We choose arbitrary values for remaining variables:
 
-```k
+```c
   int x, y;
   x = 2;
   if ( false ) { { } }
@@ -337,8 +337,8 @@ We choose arbitrary values for remaining variables:
 
 ## Interesting Programs
 
-```k
-int x, y, .Ids;
+```c
+int x, y;
 x = 2;
 {
   {
@@ -350,8 +350,8 @@ x = 2;
 { }
 ```
 
-```k
-int x, y, .Ids;
+```c
+int x, y;
 x = 2;
 {
   {
