@@ -1,43 +1,49 @@
 ---
-title: Semantics-based test case generation
+title: "Semantics-based test case generation"
 author:
   - Nishant Rodrigues
   - Manasvi Saxena
+theme: white
+transition: none
+center: false
 ---
 
 Overview
 --------
 
-Goal: Create a fuzzing tool that is both **language-agnostic** and **semantics-aware**
+Goal: Create a fuzzing tool that is both **language-agnostic** and **semantics-aware**.
 
 Our approach can be thought of as an extension of both:
 
 * Skelatal Program Enumeration, and
- 
 * Grammar based fuzzing
 
-The K Framework
+The 𝕂 Framework
 ---------------
 
-K is a framework for formally specifying languages using the semantics-first approach.
-
+𝕂 is a framework for formally specifying languages using the semantics-first
+approach.
 
 ::: columns
 
-:::: {.column width=33%}
+:::: {.column }
+
+::::: {.r-stack}
+:::::: {.fragment .fade-in-then-out}
 Several languages are already defined:
 
-1.  C
-2.  Python
-3.  LLVM
-4.  Java
-5.  JavaScript
-6.  EVM
-7.  Solidity
-8.  ...
-::::
+*  C
+*  Python
+*  LLVM
+*  Java
+*  JavaScript
+*  EVM
+*  Solidity
+*  ...
 
-:::: {.column width=33%}
+::::::
+
+:::::: {.fragment .fade-in-then-out}
 Several tools can already be derived:
 
 * Parser
@@ -45,16 +51,29 @@ Several tools can already be derived:
 * Model Checker
 * Deductive Verifier
 * Equivalence checker
+* 
+::::::
 
->  * <mark> Fuzzer? </mark>
+:::::: {.fragment .fade-in-then-out}
+Several tools can already be derived:
+
+* Parser
+* Interpreter
+* Model Checker
+* Deductive Verifier
+* Equivalence checker
+* <mark> Fuzzer? </mark> 
+::::::
+
+:::::
 ::::
 
-:::: {.column width=33%}
+:::: {.column}
 ![](../../doc/k.png){width="100%"}
 ::::
 :::
 
-What does a K semantics look like?
+What does a 𝕂 semantics look like?
 ----------------------------------
 
 :::columns
@@ -129,78 +148,165 @@ configuration <T color="yellow">
   rule int .Ids; S => S
 ```
 ::::
-
 :::
 
-Semantics-based test case generation
-------------------------------------
+Our insight
+-----------
 
-1. Execute a symbolic program "skeleton"
-2. Guide the execution process to avoid uninteresting programs
-3. Replace remaining symbolic variables with arbitary concrete values
-
-
-Executing symbolic programs
----------------------------
-
+𝕂 makes no distinction between program constructs and language constructs such as statements.
 
 :::columns
 
-:::: {.column }
-
-Leverage K's symbolic execution engine, and narrowing.
-
-* Execute a symbolic program "skeleton"
-* When symbolic variables are encountered, K "narrows" on those variables 
-* These choices are semantics-driven, so only semantically meaningful choices are made
-
+::::column
+:::::{.fragment .fade-in}
 
 Most symbolic engines support this:
 
 ```k
   int x, y;
-  x = ?X:Int;
-  y = ?X:Int
+  x = ☐:Int;
+  y = ☐:Int;
   while (x < y) { ... }
   if (x == 2) { ... } 
 ```
-
+:::::
 ::::
 
-:::: {.column }
-![](../../doc/narrowing-on-statements.png){width="50%"}
-
-K allows this:
+::::column
+:::::{.fragment .fade-in}
+𝕂 also allows this:
 
 ```k
   int x, y;
-  ?V:Id = ?I:Int;
-  ?T1:Stmt
-  ?T2:Stmt
-```
+  ☐:Id = ☐:Int;
+  ☐:Stmt
+  ☐:Stmt
 
+```
+:::::
 ::::
 :::
 
----------------------
+Semantics-based test case generation
+------------------------------------
+
+1.  Begin with a symbolic "skeleton"
+2.  Use symbolic execution (aka "narrowing") over this skeleton
+3.  Avoid uninteresting programs
+4.  Concretize any remaining variables
+
+## 1. Symbolic Skeleton
 
 :::columns
-:::: column
+::::column
 
-### Guidance needed
+* The user selects a symbolic skeleton.
 
-* State-space is HUGE!
-* Suppose we generate a program that does not terminate?
+* This skeleton allows us to guide the tool to target particular features 
 
-...
+* e.g. It is unlikely that 4 variables would be able to trigger many more bugs than 3
+
+* The user may select multiple skeletons to target distinct areas of the language
+ 
+::::
+
+:::: {.column }
+```
+int x, y;
+☐ = ☐:Exp;
+☐:Stmt
+☐:Stmt
+```
+::::
+:::
+
+
+## 2. Narrowing
+
+
+:::columns
+:::: {.column}
+
+**Program State**
+
+```
+<k> ☐:Stmt ... </k>
+<state> (x |-> 3) (y |-> 0) </state>
+```
+
+**Rules**
+
+```
+// Assignment
+rule
+  <k> X = I:Int; => . ... </k>
+  <state> 
+    ... X |-> (_ => I) ...
+  </state>
+
+// While
+rule
+  <k> while (B) S
+   => if (B) {S while (B) S}
+      else   {}
+      ...
+  </k>
+```
+::::
+
+:::: {.column}
+:::::{.fragment .fade-in}
+**Results in**
+
+```
+<k> x = ☐:Stmt ... </k>
+<state> (x |-> 3) (y |-> 0) </state>
+```
+
+```
+<k> y = ☐:Stmt ... </k>
+<state> (x |-> 3) (y |-> 0) </state>
+```
+
+```
+<k> while (☐:Exp) ☐:Stmt
+  ...
+</k>
+<state> (x |-> 3) (y |-> 0) </state>
+```
+:::::
+::::
+:::
+
+## ⚠️️️  state-space explosion ⚠️
+
+::: {.columns}
+:::: {.column}
+![](../../doc/narrowing-on-statements.png){  width=80% }
+::::
+
+:::: {.column}
+:::::{.fragment .fade-in}
+
+What about infinite loops?
+
+```
+<k> while (true) { ... }
+  ...
+</k>
+```
+:::::
+::::
+:::
+
+## 3. Avoid uninteresting programs
 
 * Limit the application of some rules
+* Use instrumentation, so that we prune narrowing once a rule has been executed $n$ times on a path.
 
-::::
-:::: column
-### Concretization
+## 4. Concretization
 
-Since only branches that were executed are narrowed, there are still remaining symbolic variables
+Since only branches that were executed are narrowed, there are still remaining symbolic variables:
 
 ```k
   int x, y;
@@ -209,7 +315,7 @@ Since only branches that were executed are narrowed, there are still remaining s
   ...
 ```
 
-We chose arbitary values for remaining variables:
+We choose arbitary values for remaining variables:
 
 ```k
   int x, y;
@@ -218,15 +324,7 @@ We chose arbitary values for remaining variables:
   ...
 ```
 
-::::
-:::
-
----
-
-:::columns
-:::: column
-
-### Prototype Evaluation
+## Prototype Evaluation
 
 * Generated 1988 programs in 10 minutes
 * Programs cover 100% of the language semantics
@@ -235,15 +333,10 @@ We chose arbitary values for remaining variables:
 
 * Some manual modifications needed for instrumentation; We should automate these
 * Guidance heuristic is very simple, will probably not be good enough for more complex languages
- 
-::::
-:::: column
 
 ### Next steps
 
 * Port to other languages, and use as a source of tests for diffrential testing. Solidity? JavaScript?
-* Performance: Currently, we run K every time we take a step, this is expensive
-* Better integration with the K
+* Performance: Currently, we run 𝕂 every time we take a step, this is expensive
+* Better integration with the 𝕂
 
-::::
-:::

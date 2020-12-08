@@ -3,7 +3,9 @@ set -eu
 cd $(dirname $0)
 
 mkdir -p ../.build/doc
-pandoc --standalone -t slidy --css=../../doc/presentation.css \
-        project-presentation.md  -o ../.build/doc/presentation.html
-# pandoc --standalone -t latex --template ./template.tex --listings \
-#         project-proposal.md  -o ../.build/doc/project-proposal.pdf
+pandoc -t revealjs -s -o ../.build/doc/presentation.html presentation.md \
+       -V revealjs-url=./../../doc/reveal.js-master \
+       --template ./template.revealjs --css=../../doc/presentation.css
+
+pandoc --standalone -t latex --template ./template.tex --listings \
+        report.md  -o ../.build/doc/report.pdf

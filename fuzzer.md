@@ -80,7 +80,6 @@ module FUZZER
 
     configuration <k> fuzz($MaxDepth, $PGM:Pattern) </k>
                   <ruleLimit> $RuleLimit </ruleLimit>
-                  <rand> String2Base("fffffffffffffffffffffffffffffffffffff", 16) </rand> // Gradually reducing frequency of set bits
 
     syntax PrePattern ::= Pattern
     syntax KResult ::= Pattern
@@ -116,12 +115,7 @@ module FUZZER
     rule <k> finalize(P) => print(unparse(getProgram(concretize(P)))) ... </k> requires \or{_}(_, _) :/=K P
 
     syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
-    rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1)     ~> choose(N, P2) ... </k>
-         <rand> Rand => Rand /Int 2 </rand>
-      requires Rand %Int 2 ==Int 1
-    rule <k> choose(N, \or{_}(P1, P2)) => finalize(P1) ~> choose(N, P2) ... </k>
-         <rand> Rand => Rand /Int 2 </rand>
-      requires Rand %Int 2 ==Int 0
+    rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1) ~> choose(N, P2) ... </k>
     rule <k> choose(N,  P) => fuzz(N, P)  ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
     rule <k> choose(_N, P) => finalize(P) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
 
