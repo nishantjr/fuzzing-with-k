@@ -131,7 +131,7 @@ module FUZZER
 
     syntax KItem ::= print(PreString) [seqstrict]
     rule <k> print(S:String)
-          => write("tmp/out/" +String Int2String(!I) +String ".kore", S)
+          => write("tmp/out/" +String Int2String(!_I) +String ".kore", S)
              ...
          </k>
 ```
@@ -159,16 +159,16 @@ a pattern where variables are replaced by concrete values
                   | "Lblnoop" [token]
 
     syntax Pattern ::= first(Patterns) [function]
-    rule first(P, Ps) => P
+    rule first(P, _) => P
 
     syntax Patterns ::= concretizePattern(Pattern)   [function]
     rule concretizePattern(Symbol{Sorts}(Patterns)) => Symbol{Sorts}(concretizePatterns(Patterns))
-    rule concretizePattern(\and{S}(P1, P2)) => concretizePattern(P1) +Patterns concretizePattern(P2)
-    rule concretizePattern(\equals{S1, S2}(P1, P2)) => .Patterns
-    rule concretizePattern(\not{S}(P)) => .Patterns
+    rule concretizePattern(\and{_S}(P1, P2)) => concretizePattern(P1) +Patterns concretizePattern(P2)
+    rule concretizePattern(\equals{_S1, _S2}(_P1, _P2)) => .Patterns
+    rule concretizePattern(\not{_S}(_P)) => .Patterns
     rule concretizePattern((\dv{_}(_)) #as Dv::Pattern) => Dv
-    rule concretizePattern((\top{_}()) #as Top::Pattern) => .Patterns
-    rule concretizePattern((\bottom{_}()) #as Bot::Pattern) => .Patterns
+    rule concretizePattern((\top{_}()) #as _::Pattern) => .Patterns
+    rule concretizePattern((\bottom{_}()) #as _::Pattern) => .Patterns
     rule concretizePattern(inj{S1, S2}(P)) => inj{S1, S2}(first(concretizePattern(P)))
     rule concretizePattern(_ : SortId{}) => \dv{SortId{}}("x")
     rule concretizePattern(_ : SortInt{}) => \dv{SortInt{}}("2")
