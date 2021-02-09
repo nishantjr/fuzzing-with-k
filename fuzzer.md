@@ -106,7 +106,7 @@ module FUZZER
 
     syntax KItem ::= "kore-exec" "(" path: String ")"
     rule <k> kore-exec(Path)
-          => parse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --search search-pattern.kore --searchType FINAL --depth 1 --module IMP --pattern " +String Path))
+          => parse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --strategy all --depth 1 --module IMP --pattern " +String Path))
              ...
          </k>
 
