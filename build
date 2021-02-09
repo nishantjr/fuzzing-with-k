@@ -20,23 +20,20 @@ from kninja import *
 
 proj = KProject(extdir = extdir)
 
-haskell =  proj.definition( alias         = 'imp-haskell'
-                          , main          = 'imp.md'
-                          , backend       = 'haskell'
-                          )
 
-llvm = proj.definition( alias       = 'imp-llvm'
-                      , main          = 'imp.md'
-                      , backend       = 'llvm'
-                      , flags         = '--coverage'
-                      )
-
+# Fuzzer
+# ------
 
 fuzzer = proj.definition( alias       = 'fuzzer'
-                      , main          = 'fuzzer.md'
-                      , backend       = 'llvm'
-                      , flags         = '--gen-bison-parser --syntax-module KORE'
-                      )
+                        , main        = 'fuzzer.md'
+                        , backend     = 'llvm'
+                        , flags       = '--gen-bison-parser --syntax-module KORE'
+                        )
 
+# Languages
+# ---------
+
+imp_haskell = proj.definition(alias = 'imp-haskell', main = 'imp/imp.md', backend = 'haskell')
+imp_llvm    = proj.definition(alias = 'imp-llvm',    main = 'imp/imp.md', backend = 'llvm',     flags = '--coverage' )
 
 proj.main()
