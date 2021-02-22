@@ -46,8 +46,19 @@ def fuzz(language, input, depth, limit):
 # Languages
 # ---------
 
+# IMP
+
 imp_haskell = proj.definition(alias = 'imp-haskell', main = 'imp/imp.md', backend = 'haskell')
 imp_llvm    = proj.definition(alias = 'imp-llvm',    main = 'imp/imp.md', backend = 'llvm',     flags = '--coverage' )
 fuzz(imp_haskell, 'imp/initial.kore', depth=7, limit=2).default()
+
+# Michelson
+
+michelson_haskell = proj.definition( alias = 'michelson-haskell'
+                                   , main = 'michelson/semantics/michelson.md'
+                                   , backend = 'haskell'
+                                   , flags = "--md-selector 'k | concrete' --syntax-module UNIT-TEST-SYNTAX --main-module MICHELSON"
+                                   )
+fuzz(michelson_haskell, 'michelson/initial.kore', depth=7, limit=2).default()
 
 proj.main()
