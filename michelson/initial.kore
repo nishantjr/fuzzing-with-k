@@ -245,7 +245,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
             /* Fl Fn D Sfa Cl */ /* InternalMap: */ Lbl'Stop'Map{}()
         ),
         /* Fl Fn D Sfa Cl */
-        Lbl'-LT-'returncode'-GT-'{}(/* Fl Fn D Sfa Cl */ \dv{SortInt{}}("111")),
+        Lbl'-LT-'returncode'-GT-'{}(/* Fl Fn D Sfa Cl */ \dv{SortInt{}}("0")),
         /* Fl Fn D Sfa Cl */
         Lbl'-LT-'assumeFailed'-GT-'{}(
             /* Fl Fn D Sfa Cl */ \dv{SortBool{}}("false")
