@@ -9,8 +9,6 @@ author:
     email: msaxena2@illinois.edu
 frontmatter:
     \newcommand {\K} {$\mathbb{K}$}
-    \newcommand{\cmark}{o}
-    \newcommand{\xmark}{x}
 abstract:
     Current state of the art fuzzers are either semantics-aware or language-specific.
     In this project, we prototype a fuzzer that is both semantics-aware and language-agnostic.
@@ -295,14 +293,14 @@ We chose arbitary values for remaining variables:
 resulting in a concrete program that may be executed by any interpreter for that language.
 
 Evaluation
-----------
+==========
 
 We evaluated our prototype by generating programs for the IMP programing language.
 Using the skeleton above, we generated 1988 programs in under 10 minutes.
 These programs have 100% coverage: they execute every semantic rule in the definition.
 
-Next Steps & Future Work
-------------------------
+Future Work
+===========
 
 Turing our current prototype into a full fledged tool requires additional work, enumerated in this section.
 
@@ -356,3 +354,24 @@ We should instead use an SMT solver to generate a number of values that satisfy 
 Our current coverage guidance is quite simple -- we stop executing on branches where a rule has been executed a certain number of times.
 This may suffice in a simple language like K, however, this may still be a massive search space for more complex langauges.
 A more interesting heuristic may prefer programs that exercise rules that haven't been seen before, or even orderings of rules that haven't been seen.
+
+Next Steps
+----------
+
+More concretely, our next steps are as follows:
+
+1. Build a tool, `kore-concretize` that takes as input a symbolic program state and produces a concretized version of this by replacing symbolic variables with concrete ones,
+   by querying an SMT solver, or bo choosing concrete values from the language grammar.
+
+2. Change \K{}'s compilation process to add the instrumentation needed for fuzzing, instead of manually adding these to the definitions.
+
+3. Improve the user interface of the fuzzer so that users may write the skeleton using a mix of the concrete language syntax
+   and \K{} syntax (for symbolic variables, etc.)
+
+4. Re-implement the fuzzer as an execution strategy within \K{}'s symbolic backend.
+
+
+# Conclusion
+
+In conclusion, we have demonstrated a prototype for a semantics-first approach to fuzzing that is both language-agnostic and semantics-aware.
+This approach works both for fuzzing interpreters and for fuzzing inputs to programs.
