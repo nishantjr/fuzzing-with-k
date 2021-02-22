@@ -4,3 +4,6 @@
 [submodule "ext/k"]
 	path = ext/k
 	url = https://github.com/kframework/k
+[submodule "michelson"]
+	path = michelson/semantics
+	url = https://github.com/runtimeverification/michelson-semantics
