@@ -30,10 +30,24 @@ fuzzer = proj.definition( alias       = 'fuzzer'
                         , flags       = '--gen-bison-parser --syntax-module KORE'
                         )
 
+def fuzz(language, input, depth, limit):
+    fuzz_rule = \
+        proj.rule( 'fuzzer'
+                 , description = 'fuzz $language: $in'
+                 , command = 'krun --directory .build/defn/fuzzer/ -cMaxDepth=$depth -cRuleLimit=$limit $in && touch $out'
+                 , ext = 'fuzz'
+                 )
+    implicit_deps = [language.target, fuzzer.target]
+    fuzz_rule = fuzz_rule.implicit(implicit_deps)
+    ret = proj.source(input).then(fuzz_rule.variable('depth', str(depth)).variable('limit', str(limit)))
+    proj.alias(input + '.' + language._alias, [ret])
+    return ret
+
 # Languages
 # ---------
 
 imp_haskell = proj.definition(alias = 'imp-haskell', main = 'imp/imp.md', backend = 'haskell')
 imp_llvm    = proj.definition(alias = 'imp-llvm',    main = 'imp/imp.md', backend = 'llvm',     flags = '--coverage' )
+fuzz(imp_haskell, 'imp/initial.kore', depth=7, limit=2).default()
 
 proj.main()
