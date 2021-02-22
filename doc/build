@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+echo Building ...
+
 set -eu
 cd $(dirname $0)
 
@@ -7,5 +10,14 @@ pandoc -t revealjs -s -o ../.build/doc/presentation.html presentation.md \
        -V revealjs-url=./../../doc/reveal.js-master \
        --template ./template.revealjs --css=../../doc/presentation.css
 
-pandoc --standalone -t latex --template ./template.tex --listings \
+pandoc --standalone \
+       --template template.tex \
+       --to latex \
+       --listings \
+       --filter pandoc-crossref \
+       --filter pandoc-citeproc \
         report.md  -o ../.build/doc/report.pdf
+
+echo Done.
+echo
+echo

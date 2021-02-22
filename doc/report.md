@@ -9,16 +9,20 @@ author:
     email: msaxena2@illinois.edu
 frontmatter:
     \newcommand {\K} {$\mathbb{K}$}
-    \newcommand{\cmark}{\ding{51}}
-    \newcommand{\xmark}{\ding{55}}
+    \newcommand{\cmark}{o}
+    \newcommand{\xmark}{x}
 abstract:
     Current state of the art fuzzers are either semantics-aware or language-specific.
     In this project, we prototype a fuzzer that is both semantics-aware and language-agnostic.
-    This is done using the semantics-first approach, by taking advantage of K semantics for the languages.
+    This is done using the semantics-first approach, by taking advantage of $\mathbb{K}$ semantics for the languages.
+
+secPrefix:
+- "Section"
+- "Sections"
 ---
 
-Motivation
-----------
+Motivation { #sec:motivation }
+==========
 
 Test case generation tools need to be aware of the semantics of the tools they
 are targeting in order to generate programs the exercise "deep" paths. However,
@@ -65,20 +69,19 @@ project aims to remedy that situation by developing a test case generator parame
 input language that is both language-agnostic, and semantics-aware.
 
 Background
-----------
+==========
 
-\K{} semantics consists of three parts:
+In this section, we briefly provide an overview of \K{}.
+We do this using a simple imperative language, `IMP`, important in the pedagogy of programming language semantics and design.
+This language has all the usual imperative language constructs such as variables, `while` loops and conditionals.
+While a simple language, it is complex enough to represent most of the important features of imperative programming languages.
 
-1. the grammar of the language, described using `syntax` statements, in Figure \ref{fig:syntax}
-2. the "`configuration`", a nested record like structure representing the state of the program,
-   in Figure \ref{fig:configuration} and
-3. the semantics of the language, described using a set of `rule`s as transitions from on state to the next,
-   in Figure \ref{fig:semantics}.
+## What is a \K{} definition?
 
-\begin{figure}[h]
-\footnotesize
-\begin{minipage}{0.38\textwidth}
-\begin{lstlisting}
+\K{} definitions are formal mathematical specifications of a language, and consists of three parts.
+First, the grammar of the language is described using `syntax` statements:
+
+```
 syntax AExp
    ::= Int | Id
      | "-" Int
@@ -91,10 +94,6 @@ syntax BExp
      | "!" BExp       [strict]
      > BExp "&&" BExp [left, strict(1)]
      | "(" BExp ")"   [bracket]
-\end{lstlisting}
-\end{minipage}
-\begin{minipage}{0.33\textwidth}
-\begin{lstlisting}
 syntax Block
    ::= "{" "}"
      | "{" Stmt "}"
@@ -108,43 +107,45 @@ syntax Stmt
 
 syntax Pgm ::= "int" Ids ";" Stmt
 syntax Ids ::= List{Id,","}
-\end{lstlisting}
-\end{minipage}
-\begin{minipage}{0.18\textwidth}
-\begin{lstlisting}configuration
+```
+
+Second, the "`configuration`", a nested record like structure, describes both the structure of the program state, and its initial values.
+
+```
 configuration
   <imp>
     <k> $PGM:Pgm </k>
     <state> .Map </state>
   </imp>
-\end{lstlisting}
-\end{minipage}\caption{The syntax and configuration of the IMP programming language}
-\label{fig:syntax}
-\label{fig:configuration}
-\end{figure}
+```
 
-\begin{figure}[h]
-\footnotesize
-\begin{minipage}{0.33\textwidth}
-\begin{lstlisting}
+Here, the programs state is a record with two fields, the `<k>` cell, initially populated with the program to be executed;
+and the `<state>` cell initialized to the empty map, `.Map`.
+
+Finally, the semantics of the language is described using a set of `rule`s as transitions from one state to the next:
+
+```
 syntax KResult ::= Int | Bool
 
 // Blocks and Statements
+// ---------------------
+
 rule S1:Stmt S2:Stmt => S1 ~> S2
 rule {} => .
 rule {S} => S
 
-// Control Structure
+// Control Structures
+// ------------------
+
 rule if (true)  S else _ => S
 rule if (false) _ else S => S
 
 rule while (B) S
   => if (B) {S while (B) S} else {}
-\end{lstlisting}
-\end{minipage}
-\begin{minipage}{0.26\textwidth}
-\begin{lstlisting}
-// Arithmetic
+
+// Arithmetic & Boolean operators
+// ------------------------------
+
 rule I1 / I2 => I1 /Int I2
   requires I2 =/=Int 0
 rule I1 + I2 => I1 +Int I2
@@ -154,10 +155,10 @@ rule I1 <= I2 => I1 <=Int I2
 rule ! T => notBool T
 rule true && B => B
 rule false && _ => false
-\end{lstlisting}
-\end{minipage}
-\begin{minipage}{0.31\textwidth}
-\begin{lstlisting}
+
+// Variables: declaration, lookup and assignement
+// ----------------------------------------------
+
 rule <k> int (X,Xs => Xs);_ </k>
      <state> Rho:Map (.Map => X|->0) </state>
   requires notBool (X in keys(Rho))
@@ -168,14 +169,55 @@ rule <k> X:Id => I ...</k>
 // Assignment
 rule <k> X = I:Int; => . ...</k>
      <state>... X |-> (_ => I) ...</state>
-\end{lstlisting}
-\end{minipage}
-\caption{The semantics and configuration of the IMP programming language}
-\label{fig:semantics}
-\end{figure}
+```
+
+\K{}'s symbolic execution and narrowing
+---------------------------------------
+
+As mentioned in @sec:motivation,
+\K{} derives a number of tools from this defintion.
+Of particular importance to our tool is \K{}'s haskell backend.
+This backend allows symbolic execution of programs for languages defined in \K{}.
+For example, we may pass the following program as input[^inputformat] to the symbolic backend:
+
+[^inputformat]: Note that since the language syntax does not allow symbolic variables, there are some additional steps to pass this symbolic program to the backend.
+
+```
+int x, y;
+x = ?I:Int;
+if ( x <= 5 ) { y = 1; }
+else          { y = 2; }
+```
+
+producing the following output:
+
+```
+    <imp>
+      <k> . </k>
+      <state> (x |-> ?I:Int) (y |-> 1) </state>
+    </imp>
+  #And { true #Equals ?I:Int <=Int 5 }
+#Or
+    <imp>
+      <k> . </k>
+      <state> (x |-> ?I:Int) (y |-> 2) </state>
+    </imp>
+  #And { false #Equals ?I:Int <=Int 5 }
+```
+
+Here, the input program assigns to `x` a symbolic integer, `?I` and then sets the value of `y` depending on whether `x` is greater than $5$ or not.
+The output indicates that there are two possible final program states -- one where `y` is assigned to `1` and the other where it is assigned to `2`.
+Each of these states is associated with a "path condition", a constraint over the symbolic variables required for the initial program to reach that state.
+
+TODO: Narrowing
+
+A key advantage of \K{} is that it makes no distinctions between programming language values, such as integers, strings, objects, etc. and
+language constructs such as statements, functions and loops.
+This gives us a powerful tool: we may symbolically execute not just programs with symbolic inputs, but *symbolic programs*.
+This advantage is in fact leveraged by our fuzzer.
 
 Our solution
-------------
+============
 
 In this project (<https://github.com/nishantjr/fuzzing-with-k/>), we leverage \K{} to perform semantics-based fuzzing.
 Our method of fuzzing can be viewed as an extension simultanuously of grammar-based fuzzing and
@@ -271,7 +313,7 @@ However, for fuzzing the effectiveness of a tool directly relates to is efficien
 -- the more quickly one can generate programs, the more quickly one may find bugs.
 We currently call into \K{}'s symbolic backend each time it needs to take a single execution step using the backend.
 This means that each time we take a step, the backend needs to parse and load the semantics, take a step and unparse the configuration
-and the fuzzer needs to parse the output produced. 
+and the fuzzer needs to parse the output produced.
 This is very inefficient.
 In the future, we may implement the fuzzer as an "execution strategy" within the symbolic backend, to save on these round trip costs.
 
@@ -302,7 +344,7 @@ This step can be automated, so that we can use any existing language definition 
 
 While conceptually simple, these are important changes that need to be made to the tooling for this fuzzer to be useful to a general audience.
 
-### Imporve concretization procedure
+### Improve concretization procedure
 
 Currently, during the concretization process, we simple chose a value hard coded value for each sort.
 For example, we always chose "2" for any symbolic integer remaining in the program.
@@ -314,4 +356,3 @@ We should instead use an SMT solver to generate a number of values that satisfy 
 Our current coverage guidance is quite simple -- we stop executing on branches where a rule has been executed a certain number of times.
 This may suffice in a simple language like K, however, this may still be a massive search space for more complex langauges.
 A more interesting heuristic may prefer programs that exercise rules that haven't been seen before, or even orderings of rules that haven't been seen.
-
