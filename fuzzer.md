@@ -217,10 +217,15 @@ a pattern where variables are replaced by concrete values
                   | "SortStmt" [token]
                   | "SortAExp" [token]
                   | "SortBExp" [token]
+                  | "SortInstruction" [token]
+                  | "SortDataList" [token]
+                  | "SortTypeName" [token]
+                  | "SortMaybeTypeName" [token]
+                  | "SortNullaryTypeName" [token]
+                  | "SortEmptyBlock" [token]
                   | "Lblnoop" [token]
-
-    syntax Pattern ::= first(Patterns) [function]
-    rule first(P, _) => P
+                  | "LblemptyBlock" [token]
+                  | "LbltypeNameUnit" [token]
 
     syntax Patterns ::= concretizePattern(Pattern)   [function]
     rule concretizePattern(Symbol{Sorts}(Patterns)) => Symbol{Sorts}(concretizePatterns(Patterns))
@@ -232,13 +237,24 @@ a pattern where variables are replaced by concrete values
     rule concretizePattern((\top{_}()) #as _::Pattern) => .Patterns
     rule concretizePattern((\bottom{_}()) #as _::Pattern) => .Patterns
     rule concretizePattern(inj{S1, S2}(P)) => inj{S1, S2}(first(concretizePattern(P)))
+
+    // General
     rule concretizePattern(_ : SortId{}) => \dv{SortId{}}("x")
     rule concretizePattern(_ : SortInt{}) => \dv{SortInt{}}("2")
-    rule concretizePattern(V : SortAExp{}) => inj{SortInt{}, SortAExp{}}(first(concretizePattern(V : SortInt{})))
     rule concretizePattern(_ : SortBool{}) => \dv{SortBool{}}("false")
+
+    // Imp
+    rule concretizePattern(V : SortAExp{}) => inj{SortInt{}, SortAExp{}}(first(concretizePattern(V : SortInt{})))
     rule concretizePattern(V : SortBExp{}) => inj{SortBool{}, SortBExp{}}(first(concretizePattern(V : SortBool{})))
-    rule concretizePattern(_ : SortBlock{}) => Lblnoop{.Sorts}(.Patterns) 
+    rule concretizePattern(_ : SortBlock{}) => Lblnoop{.Sorts}(.Patterns)
     rule concretizePattern(V : SortStmt{}) => inj{SortBlock{}, SortStmt{}}(first(concretizePattern(V : SortBlock{})))
+
+    // Michelson
+    rule concretizePattern(_ : SortInstruction{}) => inj{SortEmptyBlock{}, SortInstruction{}}(LblemptyBlock{.Sorts}(.Patterns))
+    rule concretizePattern(_ : SortDataList{})    => inj{SortEmptyBlock{}, SortDataList{}   }(LblemptyBlock{.Sorts}(.Patterns))
+
+    rule concretizePattern(_ : SortTypeName{})      => inj{SortNullaryTypeName{}, SortTypeName{}}(LbltypeNameUnit{.Sorts}(.Patterns))
+    rule concretizePattern(_ : SortMaybeTypeName{}) => inj{SortNullaryTypeName{}, SortMaybeTypeName{}}(LbltypeNameUnit{.Sorts}(.Patterns))
 ```
 
 Extract the program cell from the configuration pattern
@@ -261,14 +277,13 @@ Checks if a rule has been exercised more than `<ruleLimit>` times.
       => withinRuleLimits((R, Rs), (R |-> 0)        M) requires notBool R in_keys(M)
     rule [[ withinRuleLimits((R, Rs), (R |-> N)        M)
          => withinRuleLimits(    Rs , (R |-> N +Int 1) M)
-         ]] 
+         ]]
          <ruleLimit> RuleLimit </ruleLimit>
       requires N <Int RuleLimit
     rule [[ withinRuleLimits((R,_Rs), (R |-> RuleLimit) _M) => false ]]
          <ruleLimit> RuleLimit </ruleLimit>
     rule withinRuleLimits(.Patterns, _) => true
 
-    syntax KVar ::= "Lbl'-LT-'generatedTop'-GT-'" [token]
     syntax KVar ::= "Lbl'-LT-'ruleInstrumentation'-GT-'" [token]
     syntax Patterns ::= getRuleInstrumentation(Pattern) [function]
     rule getRuleInstrumentation(\and{_}(P1, P2)) => getRuleInstrumentation(P1) +Patterns getRuleInstrumentation(P2)
