@@ -22,6 +22,7 @@ module KORE
                      | "\\bottom" "{" Sort "}" "(" ")"                              [klabel(\bottom)]
                      | "\\forall" "{" Sort "}" "(" Pattern "," Pattern ")"          [klabel(\forall)]
                      | "\\exists" "{" Sort "}" "(" Pattern "," Pattern ")"          [klabel(\exists)]
+                     | "\\ceil" "{" Sort "," Sort "}" "(" Pattern ")"               [klabel(\ceil)]
 
     syntax Patterns ::= List{Pattern, ","} [klabel(Patterns)]
     syntax Sorts ::= List{Sort, ","}       [klabel(Sorts)]
@@ -35,6 +36,7 @@ module KORE-UNPARSE
 
     syntax String ::= unparsePattern(Pattern) [function, functional]
     rule unparsePattern(\equals { S1 , S2 } (P1, P2)) => "\\equals{" +String unparseSort(S1) +String "," +String unparseSort(S2)  +String "} (" +String unparsePattern(P1) +String " , " +String unparsePattern(P2) +String ")"
+    rule unparsePattern(\ceil { S1 , S2 } (P1)) => "\\ceil{" +String unparseSort(S1) +String "," +String unparseSort(S2)  +String "} (" +String unparsePattern(P1) +String ")"
     rule unparsePattern(KVar : Sort)                  => NameToString(KVar) +String ":" +String unparseSort(Sort)
     rule unparsePattern(\dv { S } (Value))            => "\\dv{" +String unparseSort(S)  +String "} (\"" +String Value +String "\")"
     rule unparsePattern(\top { S } ())                => "\\top{" +String unparseSort(S)  +String "} ()"
@@ -169,6 +171,7 @@ a pattern where variables are replaced by concrete values
     rule concretizePattern(Symbol{Sorts}(Patterns)) => Symbol{Sorts}(concretizePatterns(Patterns))
     rule concretizePattern(\and{_S}(P1, P2)) => concretizePattern(P1) +Patterns concretizePattern(P2)
     rule concretizePattern(\equals{_S1, _S2}(_P1, _P2)) => .Patterns
+    rule concretizePattern(\ceil{_S1, _S2}(_P1)) => .Patterns
     rule concretizePattern(\not{_S}(_P)) => .Patterns
     rule concretizePattern((\dv{_}(_)) #as Dv::Pattern) => Dv
     rule concretizePattern((\top{_}()) #as _::Pattern) => .Patterns
@@ -215,6 +218,7 @@ Checks if a rule has been exercised more than `<ruleLimit>` times.
     rule getRuleInstrumentation(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_, _, _, Lbl'-LT-'ruleInstrumentation'-GT-'{.Sorts}(KSeq)))
       => kseqToPatterns(KSeq)
     rule getRuleInstrumentation(\equals{_, _}(_, _)) => .Patterns
+    rule getRuleInstrumentation(\ceil{_, _}(_)) => .Patterns
     rule getRuleInstrumentation(\not{_}(_))          => .Patterns
 
     syntax Patterns ::= kseqToPatterns(Pattern) [function]
