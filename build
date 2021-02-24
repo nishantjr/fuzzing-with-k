@@ -34,7 +34,7 @@ def fuzz(language, input, main_module, depth, limit):
     fuzz_rule = \
         proj.rule( 'fuzzer'
                  , description = 'fuzz $language: $in'
-                 , command = 'krun --directory .build/defn/fuzzer/ -cMaxDepth=$depth -cRuleLimit=$limit -cKompiledDirectory=$kompiled -cMainModule=$mainModule $in && touch $out'
+                 , command = 'krun --directory .build/defn/fuzzer/ -cMaxDepth=$depth -cRuleLimit=$limit -cKompiledDirectory=$kompiled -cMainModule=$mainModule $in > $out || cat $out'
                  , ext = 'fuzz'
                  )
     implicit_deps = [language.target, fuzzer.target]
