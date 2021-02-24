@@ -173,7 +173,7 @@ module FUZZER
 
     syntax KItem ::= finalize(Pattern) [seqstrict]
     rule <k> finalize(\or{_}(P1, P2)) => finalize(P1) ~> finalize(P2) ... </k>
-    rule <k> finalize(P) => print(unparse(getProgram(concretize(P)))) ... </k> requires \or{_}(_, _) :/=K P
+    rule <k> finalize(P) => print(unparse(concretize(getProgram(P)))) ... </k> requires \or{_}(_, _) :/=K P
 
     syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
     rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1) ~> choose(N, P2) ... </k>
@@ -201,7 +201,7 @@ Given a Pre Pattern with variables, convert to
 a pattern where variables are replaced by concrete values
 
 ```k
-    syntax PrePattern ::= concretize(Pattern)
+    syntax PrePattern ::= concretize(PrePattern) [strict]
     rule <k> concretize(P) => first(concretizePattern(P)) ... </k>
 
     syntax Patterns ::= concretizePatterns(Patterns) [function]
@@ -246,6 +246,8 @@ Extract the program cell from the configuration pattern
 ```k
     syntax PrePattern ::= getProgram(PrePattern) [seqstrict]
     rule <k> getProgram(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_,_ {.Sorts }(P, .Patterns),_:Patterns)) => first(kseqToPatterns(P)) ... </k>
+    rule <k> getProgram(P) => getProgram(first(findSubTermsByConstructor(Lbl'-LT-'generatedTop'-GT-', P))) ... </k>
+    syntax KVar ::= "Lbl'-LT-'generatedTop'-GT-'" [token]
 ```
 
 Checks if a rule has been exercised more than `<ruleLimit>` times.
