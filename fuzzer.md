@@ -71,6 +71,60 @@ module KORE-UNPARSE
 endmodule
 ```
 
+`KORE-UTILITIES`
+==============
+
+Various generic library functions over kore.
+
+```k
+module KORE-UTILITIES
+    imports KORE
+    imports K-EQUAL
+
+    syntax Pattern ::= first(Patterns) [function]
+ // ---------------------------------------------
+    rule first(P, _) => P
+
+    syntax Patterns ::= Patterns "+Patterns" Patterns [function, functional, left]
+ // ------------------------------------------------------------------------------
+    rule (P1, P1s) +Patterns P2s => P1, (P1s +Patterns P2s)
+    rule .Patterns +Patterns P2s =>                    P2s
+
+    syntax Patterns ::= kseqToPatterns(Pattern) [function]
+ // ------------------------------------------------------
+    rule kseqToPatterns(dotk{.Sorts}(.Patterns)) => .Patterns
+    rule kseqToPatterns(kseq{.Sorts}(P, Ps)) => P, kseqToPatterns(Ps)
+    syntax KVar ::= "dotk" [token] | "kseq" [token]
+
+    syntax Patterns ::= findSubTermsByConstructor(KVar, Pattern) [function, functional]
+ // -----------------------------------------------------------------------------------
+    rule findSubTermsByConstructor(Ctor, Ctor { .Sorts } ( _ ) #as P  ) => P, .Patterns
+
+    rule findSubTermsByConstructor(Ctor, S { _ } ( Args ) )     => findSubTermsByConstructorPs(Ctor, Args) requires S =/=K Ctor
+    rule findSubTermsByConstructor(Ctor, inj{ _, _ } (P) )      => findSubTermsByConstructor(Ctor, P)
+    rule findSubTermsByConstructor(Ctor, \not{ _ } (P) )        => findSubTermsByConstructor(Ctor, P)
+    rule findSubTermsByConstructor(Ctor, \and{ _ } (P1, P2) )   => findSubTermsByConstructor(Ctor, P1) +Patterns findSubTermsByConstructor(Ctor, P2)
+    rule findSubTermsByConstructor(Ctor, \or{ _ } (P1, P2) )    => findSubTermsByConstructor(Ctor, P1) +Patterns findSubTermsByConstructor(Ctor, P2)
+
+    rule findSubTermsByConstructor(_ , \bottom{ _ } () )        => .Patterns
+    rule findSubTermsByConstructor(_ , \top{ _ } () )           => .Patterns
+    rule findSubTermsByConstructor(_ , \dv{ _ } (_) )           => .Patterns
+    rule findSubTermsByConstructor(_ , \forall{ _} (_, _) )     => .Patterns
+    rule findSubTermsByConstructor(_ , \exists{ _} (_, _) )     => .Patterns
+    rule findSubTermsByConstructor(_ , \ceil{ _, _ } (_) )      => .Patterns
+    rule findSubTermsByConstructor(_ , \equals{ _, _ } (_, _) ) => .Patterns
+    rule findSubTermsByConstructor(_ , _ : _)                   => .Patterns
+
+    syntax Patterns ::= findSubTermsByConstructorPs(KVar, Patterns) [function, functional]
+ // --------------------------------------------------------------------------------------
+    rule findSubTermsByConstructorPs(Ctor, P, Ps) => findSubTermsByConstructor(Ctor, P) +Patterns findSubTermsByConstructorPs(Ctor, Ps)
+    rule findSubTermsByConstructorPs(   _, .Patterns) => .Patterns
+endmodule
+```
+
+`FUZZER`
+========
+
 ```k
 module FUZZER
     imports INT
@@ -79,6 +133,7 @@ module FUZZER
     imports K-IO
     imports K-REFLECTION
     imports MAP
+    imports KORE-UTILITIES
 
     configuration <k> fuzz($MaxDepth, $PGM:Pattern) </k>
                   <ruleLimit> $RuleLimit </ruleLimit>
@@ -220,24 +275,6 @@ Checks if a rule has been exercised more than `<ruleLimit>` times.
     rule getRuleInstrumentation(\equals{_, _}(_, _)) => .Patterns
     rule getRuleInstrumentation(\ceil{_, _}(_)) => .Patterns
     rule getRuleInstrumentation(\not{_}(_))          => .Patterns
-
-    syntax Patterns ::= kseqToPatterns(Pattern) [function]
-    rule kseqToPatterns(dotk{.Sorts}(.Patterns)) => .Patterns
-    rule kseqToPatterns(kseq{.Sorts}(P, Ps)) => P, kseqToPatterns(Ps)
-
-    syntax Patterns ::= Patterns "+Patterns" Patterns [function]
-    rule (P1, P1s) +Patterns P2s => P1, (P1s +Patterns P2s)
-    rule .Patterns +Patterns P2s => P2s
-```
-
-TODO: remove once `--strategy all` is available
-
-```k
-    syntax KVar ::= "VarResult" [token]
-                  | "SortGeneratedTopCell" [token]
-                  | "dotk" [token]
-                  | "kseq" [token]
-    rule \equals { _, _ } ( VarResult : SortGeneratedTopCell {} , Result ) => Result [anywhere]
 ```
 
 ```k
