@@ -30,16 +30,20 @@ fuzzer = proj.definition( alias       = 'fuzzer'
                         , flags       = '--gen-bison-parser --syntax-module KORE'
                         )
 
-def fuzz(language, input, depth, limit):
+def fuzz(language, input, main_module, depth, limit):
     fuzz_rule = \
         proj.rule( 'fuzzer'
                  , description = 'fuzz $language: $in'
-                 , command = 'krun --directory .build/defn/fuzzer/ -cMaxDepth=$depth -cRuleLimit=$limit $in && touch $out'
+                 , command = 'krun --directory .build/defn/fuzzer/ -cMaxDepth=$depth -cRuleLimit=$limit -cKompiledDirectory=$kompiled -cMainModule=$mainModule $in && touch $out'
                  , ext = 'fuzz'
                  )
     implicit_deps = [language.target, fuzzer.target]
     fuzz_rule = fuzz_rule.implicit(implicit_deps)
-    ret = proj.source(input).then(fuzz_rule.variable('depth', str(depth)).variable('limit', str(limit)))
+    ret = proj.source(input).then(fuzz_rule.variable('depth', str(depth))
+                                           .variable('limit', str(limit))
+                                           .variable('kompiled', "'" + '"' + language.kompiled_dir() + '"' + "'")
+                                           .variable('mainModule', "'" + '"' + main_module + '"' + "'")
+                                 )
     proj.alias(input + '.' + language._alias, [ret])
     return ret
 
@@ -50,7 +54,7 @@ def fuzz(language, input, depth, limit):
 
 imp_haskell = proj.definition(alias = 'imp-haskell', main = 'imp/imp.md', backend = 'haskell')
 imp_llvm    = proj.definition(alias = 'imp-llvm',    main = 'imp/imp.md', backend = 'llvm',     flags = '--coverage' )
-fuzz(imp_haskell, 'imp/initial.kore', depth=7, limit=2).default()
+fuzz(imp_haskell, 'imp/initial.kore', main_module='IMP', depth=7, limit=2).default()
 
 # Michelson
 
@@ -59,6 +63,6 @@ michelson_haskell = proj.definition( alias = 'michelson-haskell'
                                    , backend = 'haskell'
                                    , flags = "--md-selector 'k | concrete' --syntax-module UNIT-TEST-SYNTAX --main-module MICHELSON"
                                    )
-fuzz(michelson_haskell, 'michelson/initial.kore', depth=7, limit=2).default()
+fuzz(michelson_haskell, 'michelson/initial.kore', main_module='MICHELSON', depth=1000, limit=2).default()
 
 proj.main()

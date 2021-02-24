@@ -80,6 +80,8 @@ module FUZZER
 
     configuration <k> fuzz($MaxDepth, $PGM:Pattern) </k>
                   <ruleLimit> $RuleLimit </ruleLimit>
+                  <kompiledDir> $KompiledDirectory:String </kompiledDir>
+                  <mainModule> $MainModule:String </mainModule>
 
     syntax PrePattern ::= Pattern
     syntax KResult ::= Pattern
@@ -106,9 +108,11 @@ module FUZZER
 
     syntax KItem ::= "kore-exec" "(" path: String ")"
     rule <k> kore-exec(Path)
-          => parse(system("./meta-kore-exec .build/defn/imp-haskell/imp-kompiled/definition.kore --strategy all --depth 1 --module IMP --pattern " +String Path))
+          => parse(system("./meta-kore-exec " +String KompiledDirectory +String "/definition.kore --strategy all --depth 1 --module " +String MainModule +String " --pattern " +String Path))
              ...
          </k>
+         <kompiledDir> KompiledDirectory </kompiledDir>
+         <mainModule> MainModule </mainModule>
 
     syntax KItem ::= finalize(Pattern) [seqstrict]
     rule <k> finalize(\or{_}(P1, P2)) => finalize(P1) ~> finalize(P2) ... </k>
