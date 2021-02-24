@@ -111,10 +111,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                                     /* Fl Fn D Sfa Cli */
                                     /* Inj: */ inj{SortInstruction{}, SortDataList{}}(
                                         /* Fl Fn D Sfa Cl */
-                                        LblABS'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'AnnotationList{}(
-                                            /* Fl Fn D Sfa Cl */
-                                            Lbl'Stop'List'LBraQuotUndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'AnnotationList'Unds'Annotation'Unds'AnnotationList'QuotRBraUnds'AnnotationList{}()
-                                        )
+                                        Var'Ques'V : SortInstruction { } 
                                     )
                                 )
                             )
@@ -270,10 +267,7 @@ Lbl'-LT-'generatedTop'-GT-'{}(
                                 /* Fl Fn D Sfa Cli */
                                 /* Inj: */ inj{SortInstruction{}, SortDataList{}}(
                                     /* Fl Fn D Sfa Cl */
-                                    LblABS'UndsUnds'MICHELSON-COMMON-SYNTAX'Unds'Instruction'Unds'AnnotationList{}(
-                                        /* Fl Fn D Sfa Cl */
-                                        Lbl'Stop'List'LBraQuotUndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'AnnotationList'Unds'Annotation'Unds'AnnotationList'QuotRBraUnds'AnnotationList{}()
-                                    )
+                                    Var'Ques'V : SortInstruction { } 
                                 )
                             )
                         )
