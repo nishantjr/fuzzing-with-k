@@ -85,6 +85,10 @@ module KORE-UTILITIES
  // ---------------------------------------------
     rule first(P, _) => P
 
+    syntax Patterns ::= getArgs(Pattern) [function]
+ // -----------------------------------------------
+    rule getArgs(Ctor { .Sorts } ( Args )) => Args
+
     syntax Patterns ::= Patterns "+Patterns" Patterns [function, functional, left]
  // ------------------------------------------------------------------------------
     rule (P1, P1s) +Patterns P2s => P1, (P1s +Patterns P2s)
@@ -137,8 +141,9 @@ module FUZZER
 
     configuration <k> fuzz($MaxDepth, $PGM:Pattern) </k>
                   <ruleLimit> $RuleLimit </ruleLimit>
-                  <kompiledDir> $KompiledDirectory:String </kompiledDir>
                   <mainModule> $MainModule:String </mainModule>
+                  <kompiledDir> $KompiledDirectory:String </kompiledDir>
+                  <outputDir>   $OutputDirectory:String </outputDir>
 
     syntax PrePattern ::= Pattern
     syntax KResult ::= Pattern
@@ -173,12 +178,13 @@ module FUZZER
 
     syntax KItem ::= finalize(Pattern) [seqstrict]
     rule <k> finalize(\or{_}(P1, P2)) => finalize(P1) ~> finalize(P2) ... </k>
-    rule <k> finalize(P) => print(unparse(concretize(getProgram(P)))) ... </k> requires \or{_}(_, _) :/=K P
+    rule <k> finalize(P) => print(unparse(concretize(getProgramPrePattern(P)))) ... </k> requires \or{_}(_, _) :/=K P
 
     syntax PrePattern ::= choose(depth: Int, PrePattern) [seqstrict(2)]
-    rule <k> choose(N, \or{_}(P1, P2)) => choose(N, P1) ~> choose(N, P2) ... </k>
-    rule <k> choose(N,  P) => fuzz(N, P)  ... </k> requires \or{_}(_, _) :/=K P andBool withinRuleLimits(P)
-    rule <k> choose(_N, P) => finalize(P) ... </k> requires \or{_}(_, _) :/=K P andBool notBool withinRuleLimits(P)
+    rule <k> choose( N, \or{_}(P1, P2)) => choose(N, P1) ~> choose(N, P2) ... </k>
+    rule <k> choose(_N, P) => .K          ... </k> requires \or{_}(_, _) :/=K P andBool usesForbiddedConstructors(first(getProgram(P)))
+    rule <k> choose( N, P) => fuzz(N, P)  ... </k> requires \or{_}(_, _) :/=K P andBool (notBool usesForbiddedConstructors(first(getProgram(P)))) andBool withinRuleLimits(P)
+    rule <k> choose(_N, P) => finalize(P) ... </k> requires \or{_}(_, _) :/=K P andBool (notBool usesForbiddedConstructors(first(getProgram(P)))) andBool (notBool withinRuleLimits(P))
 
     syntax PreString ::= unparse(PrePattern) [seqstrict]
     rule <k> unparse(P) => unparsePattern(P) ... </k>
@@ -192,9 +198,10 @@ module FUZZER
 
     syntax KItem ::= print(PreString) [seqstrict]
     rule <k> print(S:String)
-          => write("tmp/out/" +String Int2String(!_I) +String ".kore", S)
+          => write(OutputDirectory +String "/" +String Int2String(!_I) +String ".kore", S)
              ...
          </k>
+         <outputDir> OutputDirectory </outputDir>
 ```
 
 Given a Pre Pattern with variables, convert to
@@ -217,16 +224,25 @@ a pattern where variables are replaced by concrete values
                   | "SortStmt" [token]
                   | "SortAExp" [token]
                   | "SortBExp" [token]
+                  | "SortData" [token]
+                  | "SortSimpleData" [token]
                   | "SortInstruction" [token]
                   | "SortDataList" [token]
                   | "SortTypeName" [token]
                   | "SortMaybeTypeName" [token]
                   | "SortNullaryTypeName" [token]
                   | "SortEmptyBlock" [token]
+                  | "SortInternalList" [token]
                   | "Lblnoop" [token]
                   | "LblemptyBlock" [token]
                   | "LbltypeNameUnit" [token]
-
+                  | "Lbl'Stop'List'LBraQuot'InternalList'QuotRBraUnds'InternalList" [token]
+                  | "LblUnit" [token]
+                  | "Lbl'Stop'Map" [token]
+                  | "SortMap" [token]
+                  | "SortStack" [token]
+                  | "SortInternalStack" [token]
+                  | "Lbl'Stop'List'LBraQuotUndsSClnUndsUnds'MICHELSON-COMMON'Unds'Stack'Unds'StackElement'Unds'Stack'QuotRBraUnds'Stack" [token]
     syntax Patterns ::= concretizePattern(Pattern)   [function]
     rule concretizePattern(Symbol{Sorts}(Patterns)) => Symbol{Sorts}(concretizePatterns(Patterns))
     rule concretizePattern(\and{_S}(P1, P2)) => concretizePattern(P1) +Patterns concretizePattern(P2)
@@ -250,20 +266,58 @@ a pattern where variables are replaced by concrete values
     rule concretizePattern(V : SortStmt{}) => inj{SortBlock{}, SortStmt{}}(first(concretizePattern(V : SortBlock{})))
 
     // Michelson
-    rule concretizePattern(_ : SortInstruction{}) => inj{SortEmptyBlock{}, SortInstruction{}}(LblemptyBlock{.Sorts}(.Patterns))
-    rule concretizePattern(_ : SortDataList{})    => inj{SortEmptyBlock{}, SortDataList{}   }(LblemptyBlock{.Sorts}(.Patterns))
+    rule concretizePattern(_ : SortInstruction{})   => inj{SortEmptyBlock{}, SortInstruction{}}(LblemptyBlock{.Sorts}(.Patterns))
+    rule concretizePattern(_ : SortDataList{})      => inj{SortEmptyBlock{}, SortDataList{}   }(LblemptyBlock{.Sorts}(.Patterns))
 
+    rule concretizePattern(_ : SortInternalList{})  => Lbl'Stop'List'LBraQuot'InternalList'QuotRBraUnds'InternalList{.Sorts}(.Patterns)
+    rule concretizePattern(_ : SortInternalStack{}) => inj{SortStack{}, SortInternalStack{}}(Lbl'Stop'List'LBraQuotUndsSClnUndsUnds'MICHELSON-COMMON'Unds'Stack'Unds'StackElement'Unds'Stack'QuotRBraUnds'Stack{.Sorts}(.Patterns))
+
+    rule concretizePattern(_ : SortData{})          => inj{SortSimpleData{}, SortData{}}(LblUnit{.Sorts}(.Patterns))
     rule concretizePattern(_ : SortTypeName{})      => inj{SortNullaryTypeName{}, SortTypeName{}}(LbltypeNameUnit{.Sorts}(.Patterns))
     rule concretizePattern(_ : SortMaybeTypeName{}) => inj{SortNullaryTypeName{}, SortMaybeTypeName{}}(LbltypeNameUnit{.Sorts}(.Patterns))
+
+    rule concretizePattern(_ : SortMap{}) => Lbl'Stop'Map{.Sorts}(.Patterns)
 ```
 
 Extract the program cell from the configuration pattern
 
 ```k
-    syntax PrePattern ::= getProgram(PrePattern) [seqstrict]
-    rule <k> getProgram(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_,_ {.Sorts }(P, .Patterns),_:Patterns)) => first(kseqToPatterns(P)) ... </k>
-    rule <k> getProgram(P) => getProgram(first(findSubTermsByConstructor(Lbl'-LT-'generatedTop'-GT-', P))) ... </k>
-    syntax KVar ::= "Lbl'-LT-'generatedTop'-GT-'" [token]
+    syntax PrePattern ::= getProgramPrePattern(PrePattern) [seqstrict]
+    rule <k> getProgramPrePattern(P) => getProgram(P) ... </k>
+
+    syntax Pattern ::= getProgram(Pattern) [function]
+    rule getProgram(P) => first(getArgs(first(findSubTermsByConstructor(Lbl'-LT-'pgm'-GT-', P))))
+    syntax KVar ::= "Lbl'-LT-'pgm'-GT-'" [token]
+```
+
+Checks if the program uses forbidden constructors:
+
+TODO: Ideally, we want this to dissallow anything outside the SYNTAX module
+
+```k
+    syntax Bool ::= usesForbiddedConstructors(Pattern) [function]
+    rule usesForbiddedConstructors(Ctor { .Sorts } (_Args ))  => true                              requires isForbiddenConstructor(Ctor)
+    rule usesForbiddedConstructors(Ctor { .Sorts } ( Args ))  => usesForbiddedConstructorsPs(Args) requires notBool isForbiddenConstructor(Ctor)
+    rule usesForbiddedConstructors(inj{ _, _ } (P) )          => usesForbiddedConstructors(P)
+    rule usesForbiddedConstructors(\not{ _ } (P) )            => usesForbiddedConstructors(P)
+    rule usesForbiddedConstructors(\and{ _ } (P1, P2) )       => usesForbiddedConstructors(P1) orBool usesForbiddedConstructors(P2)
+    rule usesForbiddedConstructors(\or { _ } (P1, P2) )       => usesForbiddedConstructors(P1) orBool usesForbiddedConstructors(P2)
+    rule usesForbiddedConstructors(\equals{ _, _ } (P1, P2) ) => usesForbiddedConstructors(P1) orBool usesForbiddedConstructors(P2)
+    rule usesForbiddedConstructors(\forall{_} (_, P) )        => usesForbiddedConstructors(P)
+    rule usesForbiddedConstructors(\exists{_} (_, P) )        => usesForbiddedConstructors(P)
+    rule usesForbiddedConstructors(\ceil{ _, _ } (P) )        => usesForbiddedConstructors(P)
+    rule usesForbiddedConstructors(\bottom{ _ } () )          => false
+    rule usesForbiddedConstructors(\top{ _ } () )             => false
+    rule usesForbiddedConstructors(\dv{ _ } (_) )             => false
+    rule usesForbiddedConstructors(_ : _)                     => false
+    
+    syntax Bool ::= usesForbiddedConstructorsPs(Patterns) [function]
+    rule usesForbiddedConstructorsPs(P, Ps) => usesForbiddedConstructors(P) orBool usesForbiddedConstructorsPs(Ps) 
+    rule usesForbiddedConstructorsPs(.Patterns) => false
+    
+    syntax Bool ::= isForbiddenConstructor(KVar) [function]
+    rule isForbiddenConstructor( KVar) => true requires findString(NameToString(KVar), "Hash", 0) =/=Int -1
+    rule isForbiddenConstructor(_KVar) => false [owise]
 ```
 
 Checks if a rule has been exercised more than `<ruleLimit>` times.
@@ -284,14 +338,8 @@ Checks if a rule has been exercised more than `<ruleLimit>` times.
          <ruleLimit> RuleLimit </ruleLimit>
     rule withinRuleLimits(.Patterns, _) => true
 
-    syntax KVar ::= "Lbl'-LT-'ruleInstrumentation'-GT-'" [token]
     syntax Patterns ::= getRuleInstrumentation(Pattern) [function]
-    rule getRuleInstrumentation(\and{_}(P1, P2)) => getRuleInstrumentation(P1) +Patterns getRuleInstrumentation(P2)
-    rule getRuleInstrumentation(Lbl'-LT-'generatedTop'-GT-'{.Sorts}(_, _, _, Lbl'-LT-'ruleInstrumentation'-GT-'{.Sorts}(KSeq)))
-      => kseqToPatterns(KSeq)
-    rule getRuleInstrumentation(\equals{_, _}(_, _)) => .Patterns
-    rule getRuleInstrumentation(\ceil{_, _}(_)) => .Patterns
-    rule getRuleInstrumentation(\not{_}(_))          => .Patterns
+    rule getRuleInstrumentation(P) => first(findSubTermsByConstructor(Lbl'-LT-'ruleInstrumentation'-GT-', P))
 ```
 
 ```k

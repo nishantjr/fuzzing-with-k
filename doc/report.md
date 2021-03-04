@@ -9,14 +9,20 @@ author:
     email: msaxena2@illinois.edu
 frontmatter:
     \newcommand {\K} {$\mathbb{K}$}
-abstract:
+abstract: > 
     Current state of the art fuzzers are either semantics-aware or language-specific.
     In this project, we prototype a fuzzer that is both semantics-aware and language-agnostic.
     This is done using the semantics-first approach, by taking advantage of $\mathbb{K}$ semantics for the languages.
-
+    We evaluate this prototype with three cases:
+    first, for generating programs for the pedagogical imperative language called IMP;
+    second, for generating programs for the Michelson, the language of the Tezos block chain;
+    and finally, for generating inputs to the multisig contract (program) written in Michelson.
 secPrefix:
 - "Section"
 - "Sections"
+figPrefix:
+- "Figure"
+- "Figures"
 ---
 
 Motivation { #sec:motivation }
@@ -207,26 +213,29 @@ Here, the input program assigns to `x` a symbolic integer, `?I` and then sets th
 The output indicates that there are two possible final program states -- one where `y` is assigned to `1` and the other where it is assigned to `2`.
 Each of these states is associated with a "path condition", a constraint over the symbolic variables required for the initial program to reach that state.
 
-TODO: Narrowing
-
-A key advantage of \K{} is that it makes no distinctions between programming language values, such as integers, strings, objects, etc. and
-language constructs such as statements, functions and loops.
+\K{}'s symbolic engine is much more general than traditional language-specific ones.
+While most symbolic exection engines are restricted to executing programs where
+program variables are assigned symbolic values \K{} makes no such distinction.
+\K{}, however, being a language framework, makes no distinctions between
+programming language values (such as integers, strings, objects, etc)
+and language constructs (such as statements, expressions and control structures).
 This gives us a powerful tool: we may symbolically execute not just programs with symbolic inputs, but *symbolic programs*.
 This advantage is in fact leveraged by our fuzzer.
 
-Our solution
+![Narrowing on a symbolic program](narrowing-on-statements.png){ #fig:ideal width=40% }
+
+Another key feature of \K{}'s is symbolic execution engine is "narrowing".
+Narrowing is rewriting over symbolic terms.
+When executing a rule needs to additional substructure on a symbolic variable in order to continue,
+\K{} will add this detail and continue executing on all possible branches, as shown in @fig:ideal.
+
+Our Prototype
 ============
 
 In this project (<https://github.com/nishantjr/fuzzing-with-k/>), we leverage \K{} to perform semantics-based fuzzing.
-Our method of fuzzing can be viewed as an extension simultanuously of grammar-based fuzzing and
-of skeleton-based fuzzing.
-Our tool will take advantage of \K{}'s symbolic execution engine.
-This symbolic engine is much more general than traditional language specific engines.
-Most symbolic exection engines are restricted to executing programs where particular variables are assigned symbolic values.
-\K{}, however, being a language framework, has no distinction
-between program values, such as integers, strings, objects, etc
-and program constructs such as statements, conditionals, and while loops.
-This means that we may execute a **symbolic program**, i.e. one where parts of the program themselves are symbolic.
+Our method of fuzzing can be viewed as an extension of both grammar-based fuzzing and of skeleton-based fuzzing.
+Our tool takes advantage of \K{}'s symbolic execution engine to execute a **symbolic program skeleton**,
+i.e. one where parts of the program themselves are symbolic.
 
 We feed as input to our tool, a program skeleton with certain positions in the AST holding symbolic variables.
 These symbolic variables may be instantiated not just by values, but also by statements, class and function declarations
@@ -242,14 +251,8 @@ as input:
 
 In this skeleton, we have a program with two variables `x` and `y`, an
 assignment statement, followed by two arbitary statements.
+
 The \K{} symbolic engine first adds the `x` and `y` variables to the environment.
-
-\begin{figure}[h]
-\includegraphics[width=0.45\textwidth]{narrowing-on-statements.png}
-\caption{Narrowing on a symbolic program}
-\label{fig:ideal}
-\end{figure}
-
 It then encounters a symbolic statement. \K{} *narrows* (rewrites over symbolic terms) on that statement,
 chosing each possible case instantiation of the symbolic variable. For example, \K{} a symbolic statement
 may narrow into each of an assignment, an if statement, a while loop and so on.
@@ -295,9 +298,20 @@ resulting in a concrete program that may be executed by any interpreter for that
 Evaluation
 ==========
 
+We evaluate our prototype with three cases:
+first, for generating programs for the pedagogical imperative language called IMP;
+second, for generating programs for the Michelson, the language of the Tezos block chain;
+and finally, for generating inputs to the multisig contract (program) written in Michelson.
+
+## The IMP language
+
 We evaluated our prototype by generating programs for the IMP programing language.
 Using the skeleton above, we generated 1988 programs in under 10 minutes.
 These programs have 100% coverage: they execute every semantic rule in the definition.
+
+## Michelson (program generation)
+
+## Michelson (input generation)
 
 Future Work
 ===========
@@ -370,6 +384,10 @@ More concretely, our next steps are as follows:
 
 4. Re-implement the fuzzer as an execution strategy within \K{}'s symbolic backend.
 
+# Threats to validity
+
+- Symbolic Execution is slow
+- Requires a language semantics
 
 # Conclusion
 
