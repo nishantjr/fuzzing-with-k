@@ -13,10 +13,9 @@ abstract: >
     Current state of the art fuzzers are either semantics-aware or language-specific.
     In this project, we prototype a fuzzer that is both semantics-aware and language-agnostic.
     This is done using the semantics-first approach, by taking advantage of $\mathbb{K}$ semantics for the languages.
-    We evaluate this prototype with three cases:
+    We evaluate this prototype with two cases:
     first, for generating programs for the pedagogical imperative language called IMP;
-    second, for generating programs for the Michelson, the language of the Tezos block chain;
-    and finally, for generating inputs to the multisig contract (program) written in Michelson.
+    second, for generating programs for the Michelson, the language of the Tezos block chain.
 secPrefix:
 - "Section"
 - "Sections"
