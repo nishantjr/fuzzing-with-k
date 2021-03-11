@@ -242,7 +242,13 @@ a pattern where variables are replaced by concrete values
                   | "SortMap" [token]
                   | "SortStack" [token]
                   | "SortInternalStack" [token]
+                  | "SortAnnotationList" [token]
                   | "Lbl'Stop'List'LBraQuotUndsSClnUndsUnds'MICHELSON-COMMON'Unds'Stack'Unds'StackElement'Unds'Stack'QuotRBraUnds'Stack" [token]
+                  | "Lbl'Stop'List'LBraQuotUndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'AnnotationList'Unds'Annotation'Unds'AnnotationList'QuotRBraUnds'AnnotationList" [token]
+                  | "SortBlockList" [token]
+                  | "Lbl'Stop'List'LBraQuotUndsSClnUndsUnds'MICHELSON-INTERNAL-SYNTAX'Unds'BlockList'Unds'Block'Unds'BlockList'QuotRBraUnds'BlockList" [token]
+                  | "SortOutputStack" [token]
+
     syntax Patterns ::= concretizePattern(Pattern)   [function]
     rule concretizePattern(Symbol{Sorts}(Patterns)) => Symbol{Sorts}(concretizePatterns(Patterns))
     rule concretizePattern(\and{_S}(P1, P2)) => concretizePattern(P1) +Patterns concretizePattern(P2)
@@ -270,6 +276,9 @@ a pattern where variables are replaced by concrete values
     rule concretizePattern(_ : SortDataList{})      => inj{SortEmptyBlock{}, SortDataList{}   }(LblemptyBlock{.Sorts}(.Patterns))
 
     rule concretizePattern(_ : SortInternalList{})  => Lbl'Stop'List'LBraQuot'InternalList'QuotRBraUnds'InternalList{.Sorts}(.Patterns)
+    rule concretizePattern(_ : SortAnnotationList{})=> Lbl'Stop'List'LBraQuotUndsUndsUnds'MICHELSON-COMMON-SYNTAX'Unds'AnnotationList'Unds'Annotation'Unds'AnnotationList'QuotRBraUnds'AnnotationList{.Sorts}(.Patterns)
+    rule concretizePattern(_ : SortBlockList{}) => Lbl'Stop'List'LBraQuotUndsSClnUndsUnds'MICHELSON-INTERNAL-SYNTAX'Unds'BlockList'Unds'Block'Unds'BlockList'QuotRBraUnds'BlockList{.Sorts}(.Patterns)
+
     rule concretizePattern(_ : SortInternalStack{}) => inj{SortStack{}, SortInternalStack{}}(Lbl'Stop'List'LBraQuotUndsSClnUndsUnds'MICHELSON-COMMON'Unds'Stack'Unds'StackElement'Unds'Stack'QuotRBraUnds'Stack{.Sorts}(.Patterns))
 
     rule concretizePattern(_ : SortData{})          => inj{SortSimpleData{}, SortData{}}(LblUnit{.Sorts}(.Patterns))
@@ -277,6 +286,8 @@ a pattern where variables are replaced by concrete values
     rule concretizePattern(_ : SortMaybeTypeName{}) => inj{SortNullaryTypeName{}, SortMaybeTypeName{}}(LbltypeNameUnit{.Sorts}(.Patterns))
 
     rule concretizePattern(_ : SortMap{}) => Lbl'Stop'Map{.Sorts}(.Patterns)
+
+    rule concretizePattern(_ : SortOutputStack{}) => Lbl'Stop'Map{.Sorts}(.Patterns)
 ```
 
 Extract the program cell from the configuration pattern
