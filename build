@@ -34,7 +34,7 @@ def fuzz(alias, language, input, main_module, depth, limit):
     output = '.build/' + alias + '/'
     fuzz_rule = \
         proj.rule( 'fuzzer'
-                 , description = 'fuzz: $in (depth: $depth; rule-limit: $limit'
+                 , description = 'fuzz: $in (depth: $depth; rule-limit: $limit)'
                  , command = 'time krun --directory .build/defn/fuzzer/ -cMaxDepth=$depth -cRuleLimit=$limit -cKompiledDirectory=$kompiled -cMainModule=$mainModule -cOutputDirectory=$outputDirectory $in 2>&1 > $out || (cat $out; false)' 
                  , ext = 'fuzz'
                  )
@@ -57,8 +57,8 @@ def fuzz(alias, language, input, main_module, depth, limit):
 
 imp_haskell = proj.definition(alias = 'imp-haskell', main = 'imp/imp.md', backend = 'haskell')
 imp_llvm    = proj.definition(alias = 'imp-llvm',    main = 'imp/imp.md', backend = 'llvm',     flags = '--coverage' )
-fuzz('imp-smoke', imp_haskell, 'imp/initial.kore', main_module='IMP', depth=7,  limit=2).default()
-fuzz('imp-full',  imp_haskell, 'imp/initial.kore', main_module='IMP', depth=15, limit=4)
+fuzz('imp-smoke', imp_haskell, 'imp/initial.kore', main_module='IMP', depth=7,   limit=2).default()
+fuzz('imp-full',  imp_haskell, 'imp/initial.kore', main_module='IMP', depth=100, limit=4)
 
 # Michelson
 
@@ -74,7 +74,7 @@ michelson_llvm    = proj.definition( alias = 'michelson-llvm'
                                    , backend = 'llvm'
                                    , flags = "--md-selector 'k | concrete' --syntax-module UNIT-TEST-SYNTAX --main-module MICHELSON"
                                    )
-fuzz('michelson-smoke', michelson_haskell, 'michelson/initial.kore', main_module='MICHELSON', depth=1000, limit=2).default()
-fuzz('michelson-full',  michelson_haskell, 'michelson/initial.kore', main_module='MICHELSON', depth=1000, limit=4).default()
+fuzz('michelson-smoke', michelson_haskell, 'michelson/initial.kore', main_module='MICHELSON', depth=30, limit=2).default()
+fuzz('michelson-full',  michelson_haskell, 'michelson/initial.kore', main_module='MICHELSON', depth=30, limit=4).default()
 
 proj.main()
