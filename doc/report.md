@@ -9,7 +9,7 @@ author:
     email: msaxena2@illinois.edu
 frontmatter: >
     \newcommand {\K} {$\mathbb{K}$}
-abstract: > 
+abstract: >
     Current state of the art fuzzers are either semantics-aware or language-specific.
     In this project, we prototype a fuzzer that is both semantics-aware and language-agnostic.
     This is done using the semantics-first approach, by taking advantage of $\mathbb{K}$ semantics for the languages.
@@ -27,16 +27,16 @@ figPrefix:
 Motivation { #sec:motivation }
 ==========
 
-Test case generation tools need to be aware of the semantics of the tools they
+Test case generation tools need to be aware of the semantics of the languages they
 are targeting in order to generate programs the exercise "deep" paths. However,
-their development is expensive and are only available for a few languages in
-widespread usage. Language agnostic fuzzers alllowing testing many more
-languages in the same tool reducing devlopment costs. Thus, most test case
+their development is expensive and are only a few are in widespread use.
+Language agnostic fuzzers on the other hand work for multiple languages, but
+can only find "shallow" bugs. Thus, most test case
 generation tools are either language-agnostic or semantics-aware, but not both.
-
-Most test case generation tools are either been: semantics-aware,
-language specific, but can find semantically interesting bugs (e.g. jsfunfuzz, KLEE, Korat) or,
-language agnostic, but semantics-unaware and only able to find "shallow" bugs (e.g. AFL, LangFuzz).
+For instance, jsfunfuzz for Javascript, KLEE for LLVM and Korat for Java can
+exercise deep bugs, but are langauge specific. On the other hand AFL, and
+LangFuzz are grammar based tools that work for multiple languages, but aren't as
+effective at exposing deep bugs.
 
 This is because of the way programming languages are traditionally developed.
 A rough natural-language design or specification is written first.
@@ -45,13 +45,17 @@ When other language tools are needed, the same process is repeated, treating the
 This kind of development goes against the traditionally software engineering principals such as DRY (don't repeat yourself).
 
 The semantics-first approach to language development gives us insight into how this problem can be solved.
-As prescribed by this approach, we will build a test
-case generator that is parametric over the formal semantics of the language. We
-intend to use the \K{} Framework as the basis of our work. This
-framework allows defining programming languages semantics and deriving various
-language tools (e.g. parsers, interpreters, deductive verifiers, symbolic
-execution engines...) from them. Currently, \K{} does not support test
-case generation. Our work will focus on adding a test case generator to
+This approach dictates that the formal semantics of a language be defined first,
+and tools such as interepreters, compilers and debuggers be derived from said
+formal semantics. As prescribed by this approach, we will build a test
+case generator that is parametric over the formal semantics of the language.
+
+As the basis of our tool, we intend to use the \K{} Framework.
+\K{} is a language framework that has already been used to define several
+real-world languages such as C, Python, LLVM, Java, JavaScript, EVM and Solidity. The \K{} Framework is also
+already able to derive a parser, interpreter, symbolic execution engine, model
+checker and a deductive verifier from these semantics. However, \K{} currently
+doesn't have a test case generator. Our work will focus on adding a test case generator to
 \K{} and evaluating it with existing \K{} definitions of
 languages like the EVM and JavaScript.
 
@@ -60,16 +64,6 @@ languages like the EVM and JavaScript.
 \caption{The ideal language framework}
 \label{fig:ideal}
 \end{figure}
-
-The \K{} Framework is a language framework that takes such an approach. Several
-large, real-world languages are already have semantics defined in \K{}, such as C,
-Python, LLVM, Java, JavaScript, EVM and Solidity. The \K{} Framework is also
-already able to derive a parser, interpreter, symbolic execution engine, model
-checker and a deductive verifier from these semantics.
-
-The \K{} Framework, however, does not yet derive a test case generator. This
-project aims to remedy that situation by developing a test case generator parametric over the
-input language that is both language-agnostic, and semantics-aware.
 
 Background
 ==========
@@ -125,7 +119,7 @@ configuration
 Here, the programs state is a record with two fields, the `<k>` cell, initially populated with the program to be executed;
 and the `<state>` cell initialized to the empty map, `.Map`.
 
-Finally, the semantics of the language is described using a set of `rule`s as transitions from one state to the next:
+Finally, the semantics of the language is described using a set of `rules` as transitions from one state to the next:
 
 ```
 syntax KResult ::= Int | Bool
@@ -178,7 +172,7 @@ rule <k> X = I:Int; => . ...</k>
 ---------------------------------------
 
 As mentioned in @sec:motivation,
-\K{} derives a number of tools from this defintion.
+\K{} derives a number of tools from this definition.
 Of particular importance to our tool is \K{}'s haskell backend.
 This backend allows symbolic execution of programs for languages defined in \K{}.
 For example, we may pass the following program as input[^inputformat] to the symbolic backend:
@@ -213,8 +207,8 @@ The output indicates that there are two possible final program states -- one whe
 Each of these states is associated with a "path condition", a constraint over the symbolic variables required for the initial program to reach that state.
 
 \K{}'s symbolic engine is much more general than traditional language-specific ones.
-While most symbolic exection engines are restricted to executing programs where
-program variables are assigned symbolic values \K{} makes no such distinction.
+Most symbolic execution engines are restricted to executing programs where
+program variables are assigned symbolic values.
 \K{}, however, being a language framework, makes no distinctions between
 programming language values (such as integers, strings, objects, etc)
 and language constructs (such as statements, expressions and control structures).
@@ -239,7 +233,7 @@ Our method of fuzzing can be viewed as an extension of both grammar-based fuzzin
 Our tool takes advantage of \K{}'s symbolic execution engine to execute a **symbolic program skeleton**,
 i.e. one where parts of the program themselves are symbolic.
 
-We feed as input to our tool, a program skeleton with certain positions in the AST holding symbolic variables.
+We feed as input to our tool, a program skeleton with certain positions in the Abstract Syntax Tree (AST) holding symbolic variables.
 These symbolic variables may be instantiated not just by values, but also by statements, class and function declarations
 etc. For example, when prototyping our technique against the IMP programming language above, we used the following symbolic program
 as input:
@@ -252,34 +246,34 @@ as input:
 ```
 
 In this skeleton, we have a program with two variables `x` and `y`, an
-assignment statement, followed by two arbitary statements.
+assignment statement, followed by two arbitrary statements.
 
 The \K{} symbolic engine first adds the `x` and `y` variables to the environment.
 It then encounters a symbolic statement. \K{} *narrows* (rewrites over symbolic terms) on that statement,
-chosing each possible case instantiation of the symbolic variable. For example, \K{} a symbolic statement
+choosing each possible case instantiation of the symbolic variable. For example, \K{} a symbolic statement
 may narrow into each of an assignment, an if statement, a while loop and so on.
-Each of the parameters that these constucts take may then be further narrowed on.
+Each of the parameters that these constructs take may then be further narrowed on.
 For example, the left hand side of an assignment may narrow into various identifiers,
 and the right hand side into various expressions.
 Importantly, since the narrowing is driven by the semantic rules for the language,
 only semantically interesting programs are generated.
 For example, only declared variables are chosen for both the right and the left hand side of the
-assignemnt statement. Magic numbers used in the semantics (e.g. if division by zero is a special case in the semantics)
+assignment statement. Magic numbers used in the semantics (e.g. if division by zero is a special case in the semantics)
 are also found and exploited.
 
-Rule Limiting
+Rule Limiting {#sec:rule-limiting}
 -------------
 
 Simply enumerating as many programs as possible with this method is not viable however, since the search space
 is unbounded. Further, we may spend a lot of time repeatedly exercising the same areas
 of the semantics, for example, by generating deeply nested but uninteresting expressions on the right hand side
-of the assignement in the first statement, without proceeding to the next one (for example, `2 + 2 + 2 + 2 + 2`).
+of the assignment in the first statement, without proceeding to the next one (for example, `2 + 2 + 2 + 2 + 2`).
 It is also easy to generate programs that loop forever.
 
 To avoid these issues, we must therefore guide the search. We do so by recording
 the coverage for some rules and stopping symbolic execution once a program has
 executed any of these rules a certain number of times. Besides guiding the
-semantics, this also deals with non-terminating programs by dissallowing the
+semantics, this also deals with non-terminating programs by disallowing the
 rule for while loops executing too many times.
 
 Black listing internal constructs
@@ -287,8 +281,8 @@ Black listing internal constructs
 
 While implementing the semantics, we often augment the language syntax with various constructs
 to aid in its implementation.
-For example, the Michelson language allows three types of basic containters. It's `ITER`
-instruction allows looping over 
+For example, the Michelson language allows three types of basic containers. Its `ITER`
+instruction allows looping over
 
 Concretization
 --------------
@@ -357,7 +351,7 @@ output  { Stack_elt nat .AnnotationList 5 ; }
 ```
 
 This skeleton sets the input stack to one containing a single integer,
-and the contract code to a single instruction. 
+and the contract code to a single instruction.
 Since Michelson's `{ _ }` construct allows nesting instructions,
 this actually allows programs with arbitrary number of instructions.
 We, however, use the rule limits to allow programs with only 5 instructions.
@@ -399,11 +393,11 @@ This is quite an overkill for fuzzing.
 Fortunately, \K{} provides a second backend -- one aimed a fast execution of concrete programs (i.e. programs without symbolic variables).
 This backend translates \K{} definitions into native code using the LLVM compiler infrastructure.
 However, our tool depends on symbolic variables to represent parts of the program state that may to be fuzzed.
-This may be worked around by "skolemnizing" them -- we may generate new language syntax that allows symbolic variables to be treated as "uninterpreted" language constructs.
+This may be worked around by "skolemizing" them -- we may generate new language syntax that allows symbolic variables to be treated as "uninterpreted" language constructs.
 By "uninterpreted" we mean that there are no semantic rules defined over them,
 and when program execution needs to "inspect" their values to continue execution, it gets stuck.
 We may then convert these constants back into symbolic variables, execute the rule that needs to inspect the symbolic variable, and then pass the output
-configuration back to the concerte backend.
+configuration back to the concrete backend.
 
 ### User interface & tooling
 
@@ -431,6 +425,20 @@ We should instead use an SMT solver to generate a number of values that satisfy 
 Our current coverage guidance is quite simple -- we stop executing on branches where a rule has been executed a certain number of times.
 This may suffice in a simple language like K, however, this may still be a massive search space for more complex langauges.
 A more interesting heuristic may prefer programs that exercise rules that haven't been seen before, or even orderings of rules that haven't been seen.
+
+### Automatic Instrumentation
+
+As mentioned in section [@sec:rule-limiting], our tool needs to record
+coverage metrics for rules to guide search and program enumeration.
+To achieve this, the original language configuration is modified to
+hold an extra cell for rule coverage information. Every rule in the
+definition must also be modified to update the aforementioned cell on each application.
+Note that these modifications simply store metrics about rules used during
+execution, and do not affect the execution semantics of the language in any way.
+For our prototype, we manually modified the definitions to track rule coverage
+information. However, we intend to add capabilities to \K{} to automatically
+modify the definition to generate coverage metrics, improving the usability
+of our tool.
 
 Next Steps
 ----------
@@ -474,8 +482,8 @@ Dependency on the language semantics
 ------------------------------------
 
 Our fuzzer depends on a \K{} semantics for the language existing.
-Since we belive that a semantics-first approach to language development is superiour to other approaches, 
-and there are several other advantages to having a formal semantics, with important practical applicability, 
+Since we belive that a semantics-first approach to language development is superiour to other approaches,
+and there are several other advantages to having a formal semantics, with important practical applicability,
 we do not consider this in itself a disadvantage.
 
 However, since the fuzzer leans on the language semantics, it will generate
