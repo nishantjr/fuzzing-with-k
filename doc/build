@@ -11,11 +11,12 @@ pandoc -t revealjs -s -o ../.build/doc/presentation.html presentation.md \
        --template ./template.revealjs --css=../../doc/presentation.css
 
 pandoc --standalone \
+       --number-sections \
+       --filter pandoc-crossref \
+       --citeproc \
        --template template.tex \
        --to latex \
        --listings \
-       --filter pandoc-crossref \
-       --filter pandoc-citeproc \
         report.md  -o ../.build/doc/report.pdf
 
 echo Done.
