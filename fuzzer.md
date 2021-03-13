@@ -328,6 +328,7 @@ TODO: Ideally, we want this to dissallow anything outside the SYNTAX module
     
     syntax Bool ::= isForbiddenConstructor(KVar) [function]
     rule isForbiddenConstructor( KVar) => true requires findString(NameToString(KVar), "Hash", 0) =/=Int -1
+    rule isForbiddenConstructor(LblemptyBlock) => true
     rule isForbiddenConstructor(_KVar) => false [owise]
 ```
 
