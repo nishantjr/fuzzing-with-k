@@ -27,14 +27,46 @@ figPrefix:
 Motivation { #sec:motivation }
 ==========
 
-Test case generation tools need to be aware of the semantics of the languages they
+Fuzz testing is a proven tool for the testing of programming language compilers and interpreters.
+At a high-level, compilers and interpreters take (or produce programs that take) as input a string, called the program, input values to the program, and produce an output.
+In fuzz testing, we test these by the generation of a large number of programs and inputs, typically via random generation,
+and checking that the produced output is correct, e.g. using oracles, or differential testing.
+
+However, programs are not just arbitrary strings -- they are highly structured
+strings, with several criteria for them to be considered valid.
+Current language-agnostic fuzzers allow generation of syntactically valid programs by taking as input the language's grammar. 
+This gets us far -- indeed, it is required to make fuzz-testing programming languages practical.
+Grammar's, however, are just the most basic of these validity criteria,
+and capture the structure of programs only superficially.
+For example, for all but the simplest languages, type checkers would reject many (most?) syntactically valid programs.
+The following program fragment is syntactically correct, but does not even type-check because `y` is not declared.
+
+```c
+int x;
+x = y;
+```
+
+Another problem is the use of "magic numbers" important to a programming language's semantics.
+However, this is not captured by the grammar of the program.
+For example, C uses fixed-width integers. Fuzzers unaware of this behaviour,
+would not be able to detect the undefined behaviour (due to overflow and division by zero) that may be exercised by the following program:
+
+```c
+// requires d >= 0
+int foo(int n, int d) {
+    d = d + 1;
+    return n/d;
+}
+```
+
+Thus, test case generation tools need to be aware of the semantics of the languages they
 are targeting in order to generate programs the exercise "deep" paths. However,
 their development is expensive and are only a few are in widespread use.
 Language agnostic fuzzers on the other hand work for multiple languages, but
 can only find "shallow" bugs. Thus, most test case
 generation tools are either language-agnostic or semantics-aware, but not both.
 For instance, jsfunfuzz for Javascript, KLEE for LLVM and Korat for Java can
-exercise deep bugs, but are langauge specific. On the other hand AFL, and
+exercise deep bugs, but are language specific. On the other hand AFL, and
 LangFuzz are grammar based tools that work for multiple languages, but aren't as
 effective at exposing deep bugs.
 
@@ -42,11 +74,15 @@ This is because of the way programming languages are traditionally developed.
 A rough natural-language design or specification is written first.
 This is used to guide the writing of a compiler or interpreter.
 When other language tools are needed, the same process is repeated, treating the natural language document as the source of truth.
-This kind of development goes against the traditionally software engineering principals such as DRY (don't repeat yourself).
+This introduces a lot of redundancy in developing fuzzers (among other tool) for programming languages,
+dispite more being common than different, at a technical level, between fuzzers for different languages. 
+Besides being contrary to the traditionally software engineering principals such as DRY (don't repeat yourself),
+this leads to a fragmented landscape in which a few popular languages have powerful fuzzing tools
+while most others are left with either basic implementations, or none at all.
 
 The semantics-first approach to language development gives us insight into how this problem can be solved.
-This approach dictates that the formal semantics of a language be defined first,
-and tools such as interepreters, compilers and debuggers be derived from said
+It dictates that the formal semantics of a language be defined first,
+and tools such as interpreters, compilers and debuggers be derived from said
 formal semantics. As prescribed by this approach, we will build a test
 case generator that is parametric over the formal semantics of the language.
 
@@ -64,6 +100,21 @@ languages like the EVM and JavaScript.
 \caption{The ideal language framework}
 \label{fig:ideal}
 \end{figure}
+
+Let us return to the first of the two motivating examples shown above.
+The \K{} semantics of a language may define assignment as follows:
+
+```k
+    rule <k> X = Y:Id;  => X = I; ... </k> <state>... Y |-> I ...</state>
+    rule <k> X = I:Int; => .     ... </k> <state>... X |-> (_ => I) ...</state>
+```
+
+The first rule states that a variable `X` may be assigned to the value of any
+variable `Y` who's value is stored in the `<state>` cell. Since the `<state>`
+cell only holds previously declared variables, we are guaranteed that only those
+variables are used.
+Similarly, the rules for fixed-width arithmetic must explicitly define (or leave explicitly undefined)
+the behaviour of overflow.
 
 Background
 ==========
@@ -316,7 +367,7 @@ second, for generating programs for the Michelson, the language of the Tezos blo
 The IMP language
 ----------------
 
-As a proof of concept, We evaluated our prototype by generating programs for the IMP programing language.
+As a proof of concept, We evaluated our prototype by generating programs for the IMP programming language.
 Here, we used the following symbolic skeleton:
 
 ``` { mathescape=true }
@@ -326,7 +377,7 @@ $\square$:Stmt
 $\square$:Stmt
 ```
 
-This skeleton generates programs with two variables, one assignement and atleast
+This skeleton generates programs with two variables, one assignment and at least
 two statements. There may be addition statements. Using this skeleton, we
 generated 1988 programs in under 10 minutes. These programs have 100% coverage:
 they execute every semantic rule in the definition.
@@ -417,10 +468,10 @@ For this fuzzer to be useful, it must be convenient to use.
 There are a number of improvements that need to be made for this.
 
 Currently, the initial program state must be written in "Kore" -- an internal language used by various \K{} tools to communicate.
-Ideally, we would be able to write this intial state directly using the
+Ideally, we would be able to write this initial state directly using the
 programming language's syntax, or \K{}'s syntax for writing semantic rules.
 
-In its current incarnation, the prototype also requires manaul changes to the language semantics to provide instrumentation.
+In its current incarnation, the prototype also requires manual changes to the language semantics to provide instrumentation.
 This step can be automated, so that we can use any existing language definition unchanged.
 
 While conceptually simple, these are important changes that need to be made to the tooling for this fuzzer to be useful to a general audience.
@@ -483,7 +534,7 @@ the functionality of our tool.
 
 There are, however, steps we may take to mitigate this.
 Since \K{} provides another backend for fast, but concrete, execution, we may instead employ that backend.
-Obviously, this cocrete backend is unable to handle symbolic variables, essential to our fuzzing technique.
+Obviously, this concrete backend is unable to handle symbolic variables, essential to our fuzzing technique.
 We may work around this, by extending the language with concrete constants representing those symbolic variables
 (essentially "Skolemnizing" the symbolic program), and execute the program using the fast backend.
 Then, when execution depends on the symbolic variable, the fast backend will get stuck (since this constants have no language semantics defined).
@@ -494,7 +545,7 @@ Dependency on the language semantics
 ------------------------------------
 
 Our fuzzer depends on a \K{} semantics for the language existing.
-Since we belive that a semantics-first approach to language development is superiour to other approaches,
+Since we believe that a semantics-first approach to language development is superiour to other approaches,
 and there are several other advantages to having a formal semantics, with important practical applicability,
 we do not consider this in itself a disadvantage.
 
